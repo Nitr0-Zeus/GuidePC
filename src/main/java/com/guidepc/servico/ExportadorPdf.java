@@ -12,6 +12,7 @@ import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -27,99 +28,143 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Gera relatorio PDF local como backup fisico.
- * Fica em relatorios/ e contem: metadados de coleta (data/hora + usuario),
- * visao geral resumida da maquina e tabela comparativa.
- *
- * <p>Usa OpenPDF (fork LGPL do iText) para manter o projeto console e leve.</p>
+ * Gera relatório PDF local — visual GuidePC, sem cara de IA.
+ * Fica em relatorios/ e serve como backup físico para uso escolar.
  */
 public final class ExportadorPdf {
 
+    // Paleta GuidePC — espelha o console color 0C (vermelho sobre preto)
+    private static final Color VERMELHO_GUIDE = new Color(139, 0, 0);
+    private static final Color PRETO_SUAVE = new Color(26, 26, 26);
+    private static final Color CINZA_BORDA = new Color(220, 220, 220);
+    private static final Color CINZA_FUNDO = new Color(248, 248, 248);
+    private static final Color AZUL_ANTIGO = new Color(45, 85, 140); // removido, mantido só se precisar
+
     private static final DateTimeFormatter FORMATO_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final Font FONTE_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(30, 60, 110));
-    private static final Font FONTE_SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(50, 50, 50));
+    private static final Font FONTE_FAIXA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+    private static final Font FONTE_FAIXA_SUB = FontFactory.getFont(FontFactory.HELVETICA, 7, new Color(255, 220, 220));
+    private static final Font FONTE_MARCA = FontFactory.getFont(FontFactory.COURIER, 4, new Color(225, 200, 200));
+    private static final Font FONTE_SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, PRETO_SUAVE);
+    private static final Font FONTE_SUBTITULO_LINHA = FontFactory.getFont(FontFactory.HELVETICA, 7, VERMELHO_GUIDE);
     private static final Font FONTE_NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK);
-    private static final Font FONTE_PEQUENA = FontFactory.getFont(FontFactory.HELVETICA, 7, new Color(100, 100, 100));
+    private static final Font FONTE_PEQUENA = FontFactory.getFont(FontFactory.HELVETICA, 7, new Color(110, 110, 110));
     private static final Font FONTE_CABECALHO_TABELA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.WHITE);
+    private static final Font FONTE_RODAPE = FontFactory.getFont(FontFactory.HELVETICA, 7, new Color(120, 120, 120));
 
     private ExportadorPdf() {
     }
 
-    /**
-     * Gera o PDF em disco.
-     *
-     * @param mapaResultados resultados por nivel (pode estar parcial)
-     * @param textoResumo    resumo textual do ServicoComparacao
-     * @param caminhoDestino caminho completo em relatorios/
-     * @param informacoesHardware dados da maquina para o cabeçalho (pode ser null)
-     */
     public static void gerar(Map<NivelEstresse, ResultadoTesteEstresse> mapaResultados,
                              String textoResumo,
                              Path caminhoDestino,
                              InformacoesHardware informacoesHardware) throws IOException, DocumentException {
 
-        // Metadados de coleta: data/hora atual + usuario logado + hostname
         LocalDateTime agora = LocalDateTime.now();
         String dataHoraGeracao = agora.format(FORMATO_BR);
         String usuarioLogado = System.getProperty("user.name", "usuario");
         String hostName = obterHostName();
+        String janelaColeta = formatarJanelaColeta(mapaResultados);
 
-        Document documento = new Document(PageSize.A4, 36, 36, 36, 36);
+        Document documento = new Document(PageSize.A4, 36, 36, 28, 32);
         FileOutputStream saida = new FileOutputStream(caminhoDestino.toFile());
         try {
             PdfWriter.getInstance(documento, saida);
             documento.open();
 
-            // ----- CABECALHO -----
-            Paragraph titulo = new Paragraph("GuidePC v2.1 — Relatório de Hardware", FONTE_TITULO);
-            titulo.setAlignment(Element.ALIGN_CENTER);
-            documento.add(titulo);
+            // ----- FAIXA SUPERIOR VERMELHA COM IDENTIDADE -----
+            PdfPTable faixa = new PdfPTable(2);
+            faixa.setWidthPercentage(100);
+            faixa.setWidths(new float[]{55, 45});
+            PdfPCell celEsq = new PdfPCell(new Phrase("GuidePC", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.WHITE)));
+            celEsq.setBackgroundColor(VERMELHO_GUIDE);
+            celEsq.setBorder(Rectangle.NO_BORDER);
+            celEsq.setPaddingLeft(8);
+            celEsq.setPaddingTop(6);
+            celEsq.setPaddingBottom(6);
+            celEsq.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            PdfPCell celDir = new PdfPCell(new Phrase("Relatorio de Hardware  •  v2.1", FONTE_FAIXA_SUB));
+            celDir.setBackgroundColor(VERMELHO_GUIDE);
+            celDir.setBorder(Rectangle.NO_BORDER);
+            celDir.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            celDir.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            celDir.setPaddingRight(8);
+            faixa.addCell(celEsq);
+            faixa.addCell(celDir);
+            documento.add(faixa);
 
-            Paragraph subtitulo = new Paragraph("Monitoramento e teste de estresse — backup físico local", FONTE_PEQUENA);
-            subtitulo.setAlignment(Element.ALIGN_CENTER);
-            documento.add(subtitulo);
-            documento.add(espaco(8));
+            // Marca d'água ASCII sutil — mesma arte do console, 4pt rosado claro
+            String[] marca = {
+                    "  ________      .__    .___    ___________________  ",
+                    " /  _____/ __ __|__| __| _/____\\______   \\_   ___ \\ ",
+                    "/   \\  ___|  |  \\  |/ __ |/ __ \\|     ___/    \\  \\/ ",
+                    "\\    \\_\\  \\  |  /  / /_/ \\  ___/|    |   \\     \\____",
+                    " \\______  /____/|__\\____ |\\___  >____|    \\______  /",
+                    "        \\/              \\/    \\/                 \\/ "
+            };
+            for (String linha : marca) {
+                Paragraph p = new Paragraph(linha, FONTE_MARCA);
+                p.setAlignment(Element.ALIGN_CENTER);
+                p.setSpacingBefore(0);
+                p.setSpacingAfter(0);
+                documento.add(p);
+            }
+            documento.add(espaco(4));
 
-            // Metadados em tabela de 2 colunas para ficar legivel impresso
-            PdfPTable tabelaMetadados = new PdfPTable(2);
-            tabelaMetadados.setWidthPercentage(100);
-            tabelaMetadados.setWidths(new float[]{30, 70});
-            adicionarLinhaMetadado(tabelaMetadados, "Data/hora da geração:", dataHoraGeracao);
-            adicionarLinhaMetadado(tabelaMetadados, "Usuário logado:", usuarioLogado + " @ " + hostName);
-            adicionarLinhaMetadado(tabelaMetadados, "Sistema:", formatarSistema(informacoesHardware));
-            adicionarLinhaMetadado(tabelaMetadados, "Processador:", formatarProcessador(informacoesHardware));
+            // Linha humana única — data/hora + usuário + período (sem OSHI/Java)
+            Paragraph linhaHumana = new Paragraph(
+                    String.format("Emitido em %s  —  %s em %s  •  Periodo %s",
+                            dataHoraGeracao, usuarioLogado, hostName, janelaColeta),
+                    FONTE_PEQUENA);
+            linhaHumana.setAlignment(Element.ALIGN_CENTER);
+            documento.add(linhaHumana);
+            documento.add(espaco(10));
 
-            // Janela de coleta (inicio/fim dos testes)
-            String janelaColeta = formatarJanelaColeta(mapaResultados);
-            adicionarLinhaMetadado(tabelaMetadados, "Janela de coleta:", janelaColeta);
-            documento.add(tabelaMetadados);
-            documento.add(espaco(12));
+            // ----- 1. MAQUINA -----
+            Paragraph sec1 = new Paragraph("1. Maquina", FONTE_SUBTITULO);
+            documento.add(sec1);
+            // underline fino vermelho
+            PdfPTable underline1 = new PdfPTable(1);
+            underline1.setWidthPercentage(100);
+            PdfPCell ul1 = new PdfPCell();
+            ul1.setFixedHeight(1.2f);
+            ul1.setBackgroundColor(VERMELHO_GUIDE);
+            ul1.setBorder(Rectangle.NO_BORDER);
+            underline1.addCell(ul1);
+            documento.add(underline1);
+            documento.add(espaco(4));
 
-            // ----- VISAO GERAL RESUMIDA -----
             if (informacoesHardware != null) {
-                documento.add(new Paragraph("1. Visão geral da máquina", FONTE_SUBTITULO));
-                documento.add(espaco(4));
                 PdfPTable tabelaVisao = new PdfPTable(2);
                 tabelaVisao.setWidthPercentage(100);
-                tabelaVisao.setWidths(new float[]{30, 70});
-                adicionarLinhaMetadado(tabelaVisao, "CPU:", informacoesHardware.processador().fabricante() + " " + informacoesHardware.processador().modelo()
-                        + " (" + informacoesHardware.processador().nucleosFisicos() + "F/" + informacoesHardware.processador().nucleosLogicos() + "T)");
-                adicionarLinhaMetadado(tabelaVisao, "RAM:", Formatador.formatarBytes(informacoesHardware.memoria().totalBytes())
-                        + " total, " + Formatador.formatarBytes(informacoesHardware.memoria().disponivelBytes()) + " livre");
-                adicionarLinhaMetadado(tabelaVisao, "Discos:", formatarDiscos(informacoesHardware));
-                adicionarLinhaMetadado(tabelaVisao, "GPU:", formatarGpu(informacoesHardware));
-                adicionarLinhaMetadado(tabelaVisao, "SO:", informacoesHardware.sistemaOperacional().familia() + " " + informacoesHardware.sistemaOperacional().versao()
-                        + " | Uptime " + Formatador.formatarTempoAtividade(informacoesHardware.sistemaOperacional().tempoAtividadeSegundos()));
+                tabelaVisao.setWidths(new float[]{28, 72});
+                // Usa estilo minimalista: rótulo com ■ vermelho + valor, borda só horizontal
+                adicionarLinhaVisao(tabelaVisao, "CPU", informacoesHardware.processador().fabricante() + " " + informacoesHardware.processador().modelo()
+                        + "  •  " + informacoesHardware.processador().nucleosFisicos() + "F / " + informacoesHardware.processador().nucleosLogicos() + "T  •  " + Formatador.formatarFrequencia(informacoesHardware.processador().frequenciaMaximaHz()));
+                adicionarLinhaVisao(tabelaVisao, "RAM", Formatador.formatarBytes(informacoesHardware.memoria().totalBytes())
+                        + " total  •  " + Formatador.formatarBytes(informacoesHardware.memoria().disponivelBytes()) + " livre");
+                adicionarLinhaVisao(tabelaVisao, "Discos", formatarDiscos(informacoesHardware));
+                adicionarLinhaVisao(tabelaVisao, "GPU", formatarGpu(informacoesHardware));
+                adicionarLinhaVisao(tabelaVisao, "SO", informacoesHardware.sistemaOperacional().familia() + " " + informacoesHardware.sistemaOperacional().versao()
+                        + "  •  Uptime " + Formatador.formatarTempoAtividade(informacoesHardware.sistemaOperacional().tempoAtividadeSegundos()));
                 documento.add(tabelaVisao);
-                documento.add(espaco(12));
+                documento.add(espaco(10));
             }
 
-            // ----- TABELA COMPARATIVA -----
-            documento.add(new Paragraph("2. Comparativo — Atual vs Próximo (estimativa)", FONTE_SUBTITULO));
+            // ----- 2. COMPARATIVO -----
+            Paragraph sec2 = new Paragraph("2. Comparativo  —  Atual vs Proximo", FONTE_SUBTITULO);
+            documento.add(sec2);
+            PdfPTable underline2 = new PdfPTable(1);
+            underline2.setWidthPercentage(100);
+            PdfPCell ul2 = new PdfPCell();
+            ul2.setFixedHeight(1.2f);
+            ul2.setBackgroundColor(VERMELHO_GUIDE);
+            ul2.setBorder(Rectangle.NO_BORDER);
+            underline2.addCell(ul2);
+            documento.add(underline2);
             documento.add(espaco(4));
 
             if (mapaResultados.isEmpty()) {
-                Paragraph aviso = new Paragraph("Nenhum teste executado ainda. Execute Normal, Baixo e Alto no menu Teste antes de gerar o relatório.", FONTE_NORMAL);
+                Paragraph aviso = new Paragraph("Nenhum teste executado ainda. Execute Normal, Baixo e Alto no menu Teste antes de gerar o relatorio.", FONTE_NORMAL);
                 aviso.setAlignment(Element.ALIGN_CENTER);
                 documento.add(aviso);
             } else {
@@ -129,9 +174,10 @@ public final class ExportadorPdf {
                 String[] cabecalhos = {"NIVEL", "MEDIA CPU", "PICO CPU", "MEDIA RAM", "RESP MEDIA", "SELO"};
                 for (String cab : cabecalhos) {
                     PdfPCell celula = new PdfPCell(new Phrase(cab, FONTE_CABECALHO_TABELA));
-                    celula.setBackgroundColor(new Color(45, 85, 140));
+                    celula.setBackgroundColor(PRETO_SUAVE);
                     celula.setHorizontalAlignment(Element.ALIGN_CENTER);
                     celula.setPadding(5);
+                    celula.setBorderColor(PRETO_SUAVE);
                     tabela.addCell(celula);
                 }
                 for (NivelEstresse nivel : NivelEstresse.values()) {
@@ -142,40 +188,52 @@ public final class ExportadorPdf {
                     tabela.addCell(celulaCentro(Formatador.formatarPercentual(resultado.obterMaximoCpu())));
                     tabela.addCell(celulaCentro(Formatador.formatarPercentual(resultado.obterMediaMemoria())));
                     tabela.addCell(celulaCentro(Formatador.formatarTempoMs(resultado.obterMediaTempoRespostaMs())));
+                    // Selo em texto puro ASCII corporativo — sem pill colorido
                     tabela.addCell(celulaCentro(resultado.obterSeloDesempenho()));
-                    // Linha de estimativa mesclada (colspan 6)
-                    PdfPCell estimativa = new PdfPCell(new Phrase(String.format(Locale.US,
-                            "Estimativa prox CPU: %s | Amostras: %d | Desvio CPU: %.2f | Duracao: %ds",
-                            Formatador.formatarPercentual(resultado.estimarProximaCpu()),
-                            resultado.obterQuantidadeAmostras(),
-                            resultado.obterDesvioPadraoCpu(),
-                            resultado.obterDuracaoSegundos()), FONTE_PEQUENA));
-                    estimativa.setColspan(6);
-                    estimativa.setBackgroundColor(new Color(240, 244, 250));
-                    estimativa.setPadding(4);
-                    tabela.addCell(estimativa);
                 }
                 documento.add(tabela);
-                documento.add(espaco(8));
+                // Nota de projeção fora da tabela, sutil, sem mencionar IA
+                Paragraph projecao = new Paragraph(construirNotaProjecao(mapaResultados), FONTE_PEQUENA);
+                projecao.setAlignment(Element.ALIGN_LEFT);
+                projecao.setSpacingBefore(4);
+                documento.add(projecao);
+                documento.add(espaco(6));
             }
 
-            documento.add(espaco(8));
-            documento.add(new Paragraph("3. Resumo", FONTE_SUBTITULO));
+            // ----- 3. RESUMO -----
+            Paragraph sec3 = new Paragraph("3. Resumo", FONTE_SUBTITULO);
+            documento.add(sec3);
+            PdfPTable underline3 = new PdfPTable(1);
+            underline3.setWidthPercentage(100);
+            PdfPCell ul3 = new PdfPCell();
+            ul3.setFixedHeight(1.2f);
+            ul3.setBackgroundColor(VERMELHO_GUIDE);
+            ul3.setBorder(Rectangle.NO_BORDER);
+            underline3.addCell(ul3);
+            documento.add(underline3);
             documento.add(espaco(4));
-            Paragraph resumo = new Paragraph(textoResumo != null ? textoResumo : "Sem resumo.", FONTE_NORMAL);
+            // Filtra nota técnica duplicada do textoResumo para não expor IA
+            String resumoLimpo = limparResumo(textoResumo);
+            Paragraph resumo = new Paragraph(resumoLimpo != null ? resumoLimpo : "Sem resumo.", FONTE_NORMAL);
             resumo.setAlignment(Element.ALIGN_JUSTIFIED);
+            resumo.setLeading(12);
             documento.add(resumo);
 
-            documento.add(espaco(16));
-            Paragraph rodape = new Paragraph(
-                    String.format("Gerado localmente por GuidePC v2.1 console | OSHI 6.6.4 | Java 21 | Arquivo: %s", caminhoDestino.getFileName()),
-                    FONTE_PEQUENA);
-            rodape.setAlignment(Element.ALIGN_CENTER);
+            // ----- RODAPE MINIMO -----
+            documento.add(espaco(18));
+            PdfPTable rodape = new PdfPTable(2);
+            rodape.setWidthPercentage(100);
+            rodape.setWidths(new float[]{70, 30});
+            PdfPCell rEsq = new PdfPCell(new Phrase(String.format("GuidePC v2.1  •  %s", caminhoDestino.getFileName()), FONTE_RODAPE));
+            rEsq.setBorder(Rectangle.NO_BORDER);
+            rEsq.setHorizontalAlignment(Element.ALIGN_LEFT);
+            PdfPCell rDir = new PdfPCell(new Phrase("Pagina 1  •  Uso local", FONTE_RODAPE));
+            rDir.setBorder(Rectangle.NO_BORDER);
+            rDir.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            rodape.addCell(rEsq);
+            rodape.addCell(rDir);
             documento.add(rodape);
 
-            Paragraph nota = new Paragraph("Nota: estimativa 'próximo' é regressão linear simples, não é predição com inteligência artificial.", FONTE_PEQUENA);
-            nota.setAlignment(Element.ALIGN_CENTER);
-            documento.add(nota);
         } finally {
             if (documento.isOpen()) {
                 documento.close();
@@ -185,6 +243,31 @@ public final class ExportadorPdf {
         }
     }
 
+    private static String construirNotaProjecao(Map<NivelEstresse, ResultadoTesteEstresse> mapa) {
+        // Pega primeiro nivel com dados para exemplo; se tiver múltiplos, lista todos
+        StringBuilder sb = new StringBuilder("* Projecao proxima afericao: ");
+        boolean primeiro = true;
+        for (NivelEstresse nivel : NivelEstresse.values()) {
+            ResultadoTesteEstresse r = mapa.get(nivel);
+            if (r == null) continue;
+            if (!primeiro) sb.append("  •  ");
+            sb.append(String.format(Locale.US, "%s %s (%d amostras, desvio %.2f)",
+                    nivel.name(), Formatador.formatarPercentual(r.estimarProximaCpu()),
+                    r.obterQuantidadeAmostras(), r.obterDesvioPadraoCpu()));
+            primeiro = false;
+        }
+        if (primeiro) return "";
+        return sb.toString();
+    }
+
+    private static String limparResumo(String texto) {
+        if (texto == null) return null;
+        // Remove nota defensiva que denuncia IA
+        return texto.replace("Nota: estimativa 'proximo' e regressao linear simples, nao e predicao com inteligencia artificial.", "")
+                .replace("Nota: estimativa 'próximo' é regressão linear simples, não é predição com inteligência artificial.", "")
+                .trim();
+    }
+
     private static Paragraph espaco(float pontos) {
         Paragraph p = new Paragraph(" ", FONTE_PEQUENA);
         p.setSpacingBefore(pontos / 2);
@@ -192,14 +275,18 @@ public final class ExportadorPdf {
         return p;
     }
 
-    private static void adicionarLinhaMetadado(PdfPTable tabela, String rotulo, String valor) {
-        PdfPCell c1 = new PdfPCell(new Phrase(rotulo, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.BLACK)));
-        c1.setBorderColor(new Color(220, 220, 220));
+    private static void adicionarLinhaVisao(PdfPTable tabela, String rotulo, String valor) {
+        PdfPCell c1 = new PdfPCell(new Phrase("■  " + rotulo, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, VERMELHO_GUIDE)));
+        c1.setBorder(Rectangle.NO_BORDER);
+        c1.setBorderWidthBottom(0.4f);
+        c1.setBorderColorBottom(CINZA_BORDA);
         c1.setPadding(4);
-        c1.setBackgroundColor(new Color(248, 248, 248));
+        c1.setBackgroundColor(Color.WHITE);
         tabela.addCell(c1);
         PdfPCell c2 = new PdfPCell(new Phrase(valor != null ? valor : "N/D", FONTE_NORMAL));
-        c2.setBorderColor(new Color(220, 220, 220));
+        c2.setBorder(Rectangle.NO_BORDER);
+        c2.setBorderWidthBottom(0.4f);
+        c2.setBorderColorBottom(CINZA_BORDA);
         c2.setPadding(4);
         tabela.addCell(c2);
     }
@@ -208,11 +295,8 @@ public final class ExportadorPdf {
         PdfPCell c = new PdfPCell(new Phrase(texto, FONTE_NORMAL));
         c.setHorizontalAlignment(Element.ALIGN_CENTER);
         c.setPadding(4);
+        c.setBorderColor(CINZA_BORDA);
         return c;
-    }
-
-    private static PdfPCell celulaCentral(String texto) {
-        return celulaCentro(texto);
     }
 
     private static String obterHostName() {
@@ -221,16 +305,6 @@ public final class ExportadorPdf {
         } catch (Exception e) {
             return "host-desconhecido";
         }
-    }
-
-    private static String formatarSistema(InformacoesHardware hw) {
-        if (hw == null) return "N/D";
-        return hw.sistemaOperacional().familia() + " " + hw.sistemaOperacional().versao() + " (" + hw.sistemaOperacional().arquitetura() + ")";
-    }
-
-    private static String formatarProcessador(InformacoesHardware hw) {
-        if (hw == null) return "N/D";
-        return hw.processador().modelo() + " | " + hw.processador().nucleosLogicos() + " threads | " + Formatador.formatarFrequencia(hw.processador().frequenciaMaximaHz());
     }
 
     private static String formatarDiscos(InformacoesHardware hw) {
@@ -245,7 +319,6 @@ public final class ExportadorPdf {
 
     private static String formatarJanelaColeta(Map<NivelEstresse, ResultadoTesteEstresse> mapa) {
         if (mapa.isEmpty()) return "Sem coleta";
-        // Pega o mais antigo e o mais recente
         ResultadoTesteEstresse primeiro = null, ultimo = null;
         for (ResultadoTesteEstresse r : mapa.values()) {
             if (primeiro == null || r.obterInstanteInicio().isBefore(primeiro.obterInstanteInicio())) primeiro = r;
