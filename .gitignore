@@ -1,0 +1,36 @@
+# Build
+target/
+dependency-reduced-pom.xml
+*.jar
+!docs/**/*.jar
+
+# IDE - deixa cada um usar a que quiser
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+.apt_generated
+bin/
+
+# SO
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# App
+guidepc_relatorio.csv
+*.log
+hs_err_pid*

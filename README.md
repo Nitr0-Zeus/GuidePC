@@ -1,0 +1,238 @@
+# GuidePC - Monitoramento e Teste de Hardware
+
+Sistema em Java 21 que lê seu hardware de verdade, faz teste de estresse e compara os resultados. Tudo no console, sem janela, sem peso — feito pra rodar até em PC fraco.
+
+> Dica: no Windows use `chcp 65001` ou abra no VS Code/GitHub se os acentos bugarem.
+
+## Índice
+1. [O que faz](#1-o-que-faz)
+2. [Por que só console?](#2-por-que-so-console)
+3. [Pra que teste de estresse?](#3-pra-que-teste-de-estresse)
+4. [Como o projeto está organizado](#4-como-o-projeto-esta-organizado)
+5. [Tecnologias](#5-tecnologias)
+6. [Requisitos](#6-requisitos)
+7. [Como rodar](#7-como-rodar)
+8. [Como usar](#8-como-usar)
+9. [Prints reais](#9-prints-reais)
+10. [Problemas comuns](#10-problemas-comuns)
+11. [O que vem por aí](#11-o-que-vem-por-ai)
+
+---
+
+## 1. O que faz
+
+O GuidePC pega informações do seu hardware (CPU, RAM, disco, placa-mãe, BIOS, sistema e GPU) usando OSHI — nada de dado pessoal, só hardware mesmo.
+
+Depois roda testes em 3 níveis diferentes e no final te mostra um comparativo com média, pico, desvio e até uma estimativa do próximo resultado. Dá pra exportar tudo em CSV.
+
+Nessa primeira versão:
+- Leitura completa via OSHI (funciona em Windows/Linux/macOS)
+- Teste de CPU/memória com métricas ao vivo
+- Comparativo e exportação CSV
+
+O que NÃO faz (por enquanto): mexer em overclock, testar GPU pesado ou mandar dado pra nuvem.
+
+## 2. Por que só console?
+
+Porque a ideia é rodar em qualquer PC, até aquele com 4GB de RAM da escola ou laboratório.
+
+| Console (como o GuidePC é) | Com interface gráfica (JavaFX/Swing) |
+|---|---|
+| Jar de 4,5 MB, abre em menos de 1s, usa ~60-80 MB | Jar de 14 MB+, abre em 3-5s, pede 150-300 MB e placa de vídeo |
+| Roda só com `java -jar`, sem frescura | Precisa de `module-path`, JavaFX e driver de vídeo |
+| Funciona até por SSH, sem monitor | Precisa de tela, não roda em servidor |
+
+Na prática tiramos JavaFX/FXML e ficamos só com `System.out`, `Scanner` e `ExecutorService`. Qualquer PC com JDK 21 roda.
+
+## 3. Pra que teste de estresse?
+
+Pra saber se a máquina aguenta e pra comparar desempenho sem depender de benchmark externo.
+
+| Nível | O que faz | Quando usar |
+|---|---|---|
+| **Normal** | Só monitora, sem carga | Serve de base pra comparar |
+| **Baixo** | Usa 50% dos núcleos com conta matemática (`sin/cos/sqrt`) | Simula uso do dia a dia, navegador, escritório |
+| **Alto** | Usa 100% dos núcleos + ocupa até 60% da RAM livre (limite 2GB) | Testa resfriamento e limite da máquina |
+
+A cada 500ms coleta:
+- Uso de CPU e RAM (%)
+- Frequência da CPU
+- Temperatura (se tiver sensor)
+- Tempo de resposta do benchmark interno (ms)
+
+No final calcula média, pico, mínimo, desvio padrão e chuta o próximo valor de CPU com regressão linear simples. Classifica como `Bom` (<60% CPU e <5ms), `Regular` (<85% e <15ms) ou `Crítico`.
+
+## 4. Como o projeto está organizado
+
+MVC adaptado pra console, tudo em pt-br:
+
+```
+GuidePC/
+├── pom.xml
+├── run.bat                          # atalho pra java -jar target/guidepc-1.0.0.jar
+└── src/main/java/com/guidepc/
+    ├── Principal.java               # menu principal
+    ├── modelo/
+    │   ├── InformacoesHardware.java
+    │   ├── InformacoesProcessador.java
+    │   ├── InformacoesMemoria.java
+    │   ├── InformacoesDisco.java
+    │   ├── InformacoesPlacaMae.java
+    │   ├── InformacoesSistemaOperacional.java
+    │   ├── NivelEstresse.java       # NORMAL / BAIXO / ALTO
+    │   ├── Amostra.java
+    │   └── ResultadoTesteEstresse.java
+    ├── servico/
+    │   ├── ServicoColetorHardware.java
+    │   ├── ServicoTesteEstresse.java
+    │   └── ServicoComparacao.java
+    ├── visao/
+    │   ├── VisaoConsole.java
+    │   ├── VisaoGeralConsole.java
+    │   ├── VisaoTesteEstresseConsole.java
+    │   └── VisaoComparativoConsole.java
+    ├── controlador/
+    │   ├── Comando.java
+    │   ├── ComandoVisaoGeral.java
+    │   ├── ComandoTesteEstresse.java
+    │   ├── ComandoComparativo.java
+    │   ├── ComandoSair.java
+    │   └── ComandoInvalido.java
+    └── utilitario/Formatador.java
+```
+
+Quer mexer? Adiciona campo no `modelo`, ajusta o `ServicoColetorHardware` e atualiza a `VisaoGeralConsole`.
+
+## 5. Tecnologias
+
+| Camada | O que usa | Versão |
+|---|---|---|
+| Linguagem | Java | 21 (Temurin) |
+| Coleta | OSHI | 6.6.4 |
+| Acesso nativo | JNA | 5.15.0 |
+| Log | SLF4J Simple | 2.0.16 |
+| Build | Maven | 3.9+ |
+| Teste | JUnit | 5.11.0 |
+
+## 6. Requisitos
+
+- JDK 21 (`java -version` pra conferir)
+- Maven 3.9+ (só se for compilar)
+- 100 MB livres, Windows/Linux/macOS
+
+## 7. Como rodar
+
+```bat
+# clonar
+git clone https://github.com/Nitr0-Zeus/GuidePC.git
+cd GuidePC
+
+# compilar
+mvn clean package -DskipTests
+
+# rodar (recomendado)
+java -jar target/guidepc-1.0.0.jar
+# ou só clicar/duplo clique em
+run.bat
+```
+
+`run.bat` já faz o `chcp 65001` pra acento não bugar:
+```bat
+@echo off
+chcp 65001 >nul
+java -jar target\guidepc-1.0.0.jar
+```
+
+Pra rodar os testes:
+```bat
+mvn test
+```
+
+## 8. Como usar
+
+### Menu principal
+```
+============================================================
+ GuidePC v1.0.0 - MONITORAMENTO DE HARDWARE
+============================================================
+[1] Visão Geral - Exibir hardware (CPU, RAM, Disco, Placa, GPU)
+[2] Teste de Estresse - Normal / Baixo / Alto (15s a 120s)
+[3] Comparativo - Atual vs Próximo + exportar CSV
+[4] Sair
+Escolha uma opcao (1-4):
+```
+
+### Opção 1 - Visão Geral
+Mostra tudo: fabricante/modelo da CPU, núcleos, frequência, uso e temperatura; RAM total/livre; discos (já diz se é HDD/SSD/NVMe); placa-mãe/BIOS; sistema e tempo ligado; GPUs. Aperta `ENTER` pra voltar.
+
+### Opção 2 - Teste de Estresse
+1. Escolhe o nível: `1` Normal, `2` Baixo, `3` Alto
+2. Escolhe duração: `1` 15s, `2` 30s, `3` 60s, `4` 120s
+3. Acompanha ao vivo:
+   ```
+   [##########--------------------] 33%
+   CPU 42,8% | RAM 87,2% | Temp Nao disponivel | Resp 4,2 ms | 33%
+   ```
+4. No final salva pro comparativo. Quer parar antes? `Ctrl+C`.
+
+Segurança: no nível Alto ele só aloca até 60% da RAM livre e no máximo 2GB. Se ficar com menos de 200MB livres, solta metade e faz `GC`.
+
+### Opção 3 - Comparativo
+Mostra tabela assim:
+```
+NIVEL        | MEDIA CPU  | PICO CPU   | MEDIA RAM  | RESP MEDIA   | SELO
+NORMAL       | 40,4%      | 47,5%      | 87,4%      | 4,8 ms       | Bom
+  -> Estimativa prox CPU: 40,0% | Amostras: 33 | Desvio CPU: 3.26
+```
+E um resumo tipo `Normal->Alto +X%`. Pergunta `Deseja exportar CSV? (s/n)` e gera o `guidepc_relatorio.csv` na pasta do programa:
+```
+nivel,duracao_s,amostras,media_cpu,max_cpu,min_cpu,desvio_cpu,...
+NORMAL,15,33,40.40,47.50,35.20,3.26,...
+```
+
+### Opção 4 - Sair
+Fecha e libera as threads. Se rodar com entrada redirecionada e fechar, sai sozinho com `Entrada encerrada, saindo...`.
+
+## 9. Prints reais
+
+Tirados aqui mesmo — Ryzen 7 5700U, 11,35 GB, Windows 11, console puro:
+
+### Menu Principal
+![Menu](docs/prints/01-menu-principal.png)
+
+### Visão Geral
+![Visao Geral](docs/prints/02-visao-geral.png)
+<details><summary>Texto copiável</summary>
+
+```
+[PROCESSADOR]
+  Fabricante e Modelo : AuthenticAMD AMD Ryzen 7 5700U with Radeon Graphics
+  Nucleos Fisicos     : 8
+  Nucleos Logicos     : 16
+  Uso Atual           : 36,9%
+[MEMORIA RAM]
+  Total               : 11,35 GB
+  Disponivel          : 1,35 GB
+```
+</details>
+
+### Teste de Estresse (15s NORMAL)
+![Teste](docs/prints/03-teste-estresse.png)
+
+### Comparativo
+![Comparativo](docs/prints/04-comparativo.png)
+
+## 10. Problemas comuns
+
+| O que aparece | Por que | O que fazer |
+|---|---|---|
+| `Temperatura: Nao disponivel` | Sem sensor/driver ou sem permissão de admin | Normal no Windows, não atrapalha o teste |
+| `MSAcpi_ThermalZoneTemperature` warn | OSHI tenta WMI que não existe | Só ignorar |
+| `Nenhum disco detectado` | Sem permissão pro SMART | Roda como administrador se precisar do serial |
+| `OutOfMemoryError` no Alto | Bateu no limite | Ele solta metade da memória e continua |
+| Acento com `?` | Console sem UTF-8 | Usa o `run.bat` que já faz `chcp 65001` |
+
+## 11. O que vem por aí
+
+- v1: console, 3 níveis, CSV (atual)
+- v2: histórico em SQLite, exportar PDF, teste de disco
