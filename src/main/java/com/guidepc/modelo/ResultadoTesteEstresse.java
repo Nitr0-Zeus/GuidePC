@@ -135,20 +135,21 @@ public class ResultadoTesteEstresse {
     }
 
     /**
-     * Classifica o resultado em selo legivel.
-     * Bom: CPU < 60% e resposta < 5 ms | Regular: CPU < 85% e resposta < 15 ms | caso contrario Critico.
+     * Classifica o resultado em selo legivel para leigo.
+     * Ótimo: CPU < 60% e resposta < 5 ms | Atenção: CPU < 85% e resposta < 15 ms | caso contrario Crítico.
+     * Nomes pensados para uso escolar: direto e sem jargão.
      */
     public String obterSeloDesempenho() {
-        boolean bom = this.mediaCpu < 60.0 && this.mediaTempoRespostaMs < 5.0;
-        boolean regular = this.mediaCpu < 85.0 && this.mediaTempoRespostaMs < 15.0;
+        boolean otimo = this.mediaCpu < 60.0 && this.mediaTempoRespostaMs < 5.0;
+        boolean atencao = this.mediaCpu < 85.0 && this.mediaTempoRespostaMs < 15.0;
 
-        if (bom) {
-            return "Bom";
+        if (otimo) {
+            return "Ótimo";
         }
-        if (regular) {
-            return "Regular";
+        if (atencao) {
+            return "Atenção";
         }
-        return "Critico";
+        return "Crítico";
     }
 
     public NivelEstresse obterNivelEstresse() {

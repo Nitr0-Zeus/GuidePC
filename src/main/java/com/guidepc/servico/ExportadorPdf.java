@@ -117,6 +117,36 @@ public final class ExportadorPdf {
                     FONTE_PEQUENA);
             linhaHumana.setAlignment(Element.ALIGN_CENTER);
             documento.add(linhaHumana);
+            documento.add(espaco(8));
+
+            // ----- BOX COMO LER (antes dos números, para leigo entender) -----
+            PdfPTable boxLer = new PdfPTable(1);
+            boxLer.setWidthPercentage(100);
+            PdfPCell celBox = new PdfPCell();
+            celBox.setBackgroundColor(new Color(255, 248, 248));
+            celBox.setBorderColor(new Color(224, 207, 207));
+            celBox.setBorderWidth(0.6f);
+            celBox.setPadding(7);
+            // Título do box
+            Paragraph tituloBox = new Paragraph("Como ler este relatorio", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, VERMELHO_GUIDE));
+            tituloBox.setSpacingAfter(3);
+            celBox.addElement(tituloBox);
+            String[] bullets = {
+                    "Uso do processador: esforco do cerebro do PC (0% livre, 100% no maximo) — seu sistema e o PC dividem essa carga.",
+                    "Memoria: quanto da RAM esta ocupada. Windows costuma deixar alto, nao e defeito.",
+                    "Pico: maior esforco em um instante isolado.",
+                    "Tempo de resposta: rapidez para fazer uma conta — quanto menor, melhor.",
+                    "Avaliacao: resumo simples — Otimo (ate 60% e <5ms), Atencao (ate 85% e <15ms), Critico (acima, verificar ventilacao).",
+                    "Tendencia: chute do proximo teste se repetir agora, baseado nas ultimas leituras."
+            };
+            for (String b : bullets) {
+                Paragraph p = new Paragraph("•  " + b, FontFactory.getFont(FontFactory.HELVETICA, 7, new Color(60, 60, 60)));
+                p.setLeading(9);
+                p.setSpacingAfter(1);
+                celBox.addElement(p);
+            }
+            boxLer.addCell(celBox);
+            documento.add(boxLer);
             documento.add(espaco(10));
 
             // ----- 1. MAQUINA -----
@@ -137,16 +167,21 @@ public final class ExportadorPdf {
                 PdfPTable tabelaVisao = new PdfPTable(2);
                 tabelaVisao.setWidthPercentage(100);
                 tabelaVisao.setWidths(new float[]{28, 72});
-                // Usa estilo minimalista: rótulo com ■ vermelho + valor, borda só horizontal
-                adicionarLinhaVisao(tabelaVisao, "CPU", informacoesHardware.processador().fabricante() + " " + informacoesHardware.processador().modelo()
-                        + "  •  " + informacoesHardware.processador().nucleosFisicos() + "F / " + informacoesHardware.processador().nucleosLogicos() + "T  •  " + Formatador.formatarFrequencia(informacoesHardware.processador().frequenciaMaximaHz()));
-                adicionarLinhaVisao(tabelaVisao, "RAM", Formatador.formatarBytes(informacoesHardware.memoria().totalBytes())
-                        + " total  •  " + Formatador.formatarBytes(informacoesHardware.memoria().disponivelBytes()) + " livre");
-                adicionarLinhaVisao(tabelaVisao, "Discos", formatarDiscos(informacoesHardware));
-                adicionarLinhaVisao(tabelaVisao, "GPU", formatarGpu(informacoesHardware));
-                adicionarLinhaVisao(tabelaVisao, "SO", informacoesHardware.sistemaOperacional().familia() + " " + informacoesHardware.sistemaOperacional().versao()
-                        + "  •  Uptime " + Formatador.formatarTempoAtividade(informacoesHardware.sistemaOperacional().tempoAtividadeSegundos()));
+                // Rótulos meio a meio: técnicos mas com explicação leiga
+                adicionarLinhaVisao(tabelaVisao, "Processador", informacoesHardware.processador().fabricante() + " " + informacoesHardware.processador().modelo()
+                        + "  •  " + informacoesHardware.processador().nucleosFisicos() + " nucleos / " + informacoesHardware.processador().nucleosLogicos() + " tarefas  •  " + Formatador.formatarFrequencia(informacoesHardware.processador().frequenciaMaximaHz()));
+                adicionarLinhaVisao(tabelaVisao, "Memoria (RAM)", Formatador.formatarBytes(informacoesHardware.memoria().totalBytes())
+                        + " no total  •  " + Formatador.formatarBytes(informacoesHardware.memoria().disponivelBytes()) + " livre agora");
+                adicionarLinhaVisao(tabelaVisao, "Armazenamento", formatarDiscos(informacoesHardware));
+                adicionarLinhaVisao(tabelaVisao, "Placa de video", formatarGpu(informacoesHardware));
+                adicionarLinhaVisao(tabelaVisao, "Sistema", informacoesHardware.sistemaOperacional().familia() + " " + informacoesHardware.sistemaOperacional().versao()
+                        + "  •  Ligado ha " + Formatador.formatarTempoAtividade(informacoesHardware.sistemaOperacional().tempoAtividadeSegundos()));
                 documento.add(tabelaVisao);
+                // Nota leiga abaixo da tabela
+                Paragraph notaVisao = new Paragraph("* Dados coletados agora; nao sao dados pessoais — so hardware.", FONTE_PEQUENA);
+                notaVisao.setAlignment(Element.ALIGN_LEFT);
+                notaVisao.setSpacingBefore(3);
+                documento.add(notaVisao);
                 documento.add(espaco(10));
             }
 
@@ -170,38 +205,43 @@ public final class ExportadorPdf {
             } else {
                 PdfPTable tabela = new PdfPTable(6);
                 tabela.setWidthPercentage(100);
-                tabela.setWidths(new float[]{18, 16, 16, 16, 18, 16});
-                String[] cabecalhos = {"NIVEL", "MEDIA CPU", "PICO CPU", "MEDIA RAM", "RESP MEDIA", "SELO"};
+                tabela.setWidths(new float[]{20, 14, 14, 14, 16, 16});
+                // Cabeçalhos meio a meio: termo técnico + leigo em linha única
+                String[] cabecalhos = {"Situação", "Uso médio", "Pico", "Memória", "Resposta", "Avaliação"};
                 for (String cab : cabecalhos) {
                     PdfPCell celula = new PdfPCell(new Phrase(cab, FONTE_CABECALHO_TABELA));
                     celula.setBackgroundColor(PRETO_SUAVE);
                     celula.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    celula.setPadding(5);
+                    celula.setPadding(4);
                     celula.setBorderColor(PRETO_SUAVE);
                     tabela.addCell(celula);
                 }
                 for (NivelEstresse nivel : NivelEstresse.values()) {
                     ResultadoTesteEstresse resultado = mapaResultados.get(nivel);
                     if (resultado == null) continue;
-                    tabela.addCell(celulaCentro(nivel.name()));
-                    tabela.addCell(celulaCentro(Formatador.formatarPercentual(resultado.obterMediaCpu())));
-                    tabela.addCell(celulaCentro(Formatador.formatarPercentual(resultado.obterMaximoCpu())));
+                    // Usa rótulo leigo do nível
+                    tabela.addCell(celulaCentro(nivel.obterRotulo().replace(" (base)", "")));
+                    tabela.addCell(celulaCentroExplicativo(Formatador.formatarPercentual(resultado.obterMediaCpu()), interpretarUso(resultado.obterMediaCpu())));
+                    tabela.addCell(celulaCentroExplicativo(Formatador.formatarPercentual(resultado.obterMaximoCpu()), interpretarPico(resultado.obterMaximoCpu())));
                     tabela.addCell(celulaCentro(Formatador.formatarPercentual(resultado.obterMediaMemoria())));
-                    tabela.addCell(celulaCentro(Formatador.formatarTempoMs(resultado.obterMediaTempoRespostaMs())));
-                    // Selo em texto puro ASCII corporativo — sem pill colorido
+                    tabela.addCell(celulaCentroExplicativo(Formatador.formatarTempoMs(resultado.obterMediaTempoRespostaMs()), interpretarResposta(resultado.obterMediaTempoRespostaMs())));
+                    // Selo em texto puro ASCII corporativo — Ótimo/Atenção/Crítico
                     tabela.addCell(celulaCentro(resultado.obterSeloDesempenho()));
                 }
                 documento.add(tabela);
-                // Nota de projeção fora da tabela, sutil, sem mencionar IA
+                // Legenda leiga da avaliação + tendência
+                Paragraph legenda = new Paragraph("Avaliação: Ótimo (até 60% e <5ms)  •  Atenção (até 85% e <15ms)  •  Crítico (acima, verificar ventilação)", FONTE_PEQUENA);
+                legenda.setSpacingBefore(3);
+                documento.add(legenda);
                 Paragraph projecao = new Paragraph(construirNotaProjecao(mapaResultados), FONTE_PEQUENA);
                 projecao.setAlignment(Element.ALIGN_LEFT);
-                projecao.setSpacingBefore(4);
+                projecao.setSpacingBefore(2);
                 documento.add(projecao);
                 documento.add(espaco(6));
             }
 
-            // ----- 3. RESUMO -----
-            Paragraph sec3 = new Paragraph("3. Resumo", FONTE_SUBTITULO);
+            // ----- 3. RESUMO EXPLICATIVO (meio a meio, para leigo) -----
+            Paragraph sec3 = new Paragraph("3. Resumo — o que isso significa", FONTE_SUBTITULO);
             documento.add(sec3);
             PdfPTable underline3 = new PdfPTable(1);
             underline3.setWidthPercentage(100);
@@ -212,12 +252,19 @@ public final class ExportadorPdf {
             underline3.addCell(ul3);
             documento.add(underline3);
             documento.add(espaco(4));
-            // Filtra nota técnica duplicada do textoResumo para não expor IA
-            String resumoLimpo = limparResumo(textoResumo);
-            Paragraph resumo = new Paragraph(resumoLimpo != null ? resumoLimpo : "Sem resumo.", FONTE_NORMAL);
+            String resumoLeigo = construirResumoLeigo(mapaResultados);
+            // Fallback para texto original filtrado se não houver mapa
+            if (resumoLeigo == null || resumoLeigo.isBlank()) {
+                resumoLeigo = limparResumo(textoResumo);
+            }
+            Paragraph resumo = new Paragraph(resumoLeigo != null ? resumoLeigo : "Sem resumo.", FONTE_NORMAL);
             resumo.setAlignment(Element.ALIGN_JUSTIFIED);
             resumo.setLeading(12);
             documento.add(resumo);
+            // Dica prática leiga
+            Paragraph dica = new Paragraph("Dica: pico acima de 90% no teste Alto indica aquecimento — verifique ventilação e poeira. Memoria alta e constante é normal no Windows com navegador aberto.", FONTE_PEQUENA);
+            dica.setSpacingBefore(6);
+            documento.add(dica);
 
             // ----- RODAPE MINIMO -----
             documento.add(espaco(18));
@@ -244,20 +291,50 @@ public final class ExportadorPdf {
     }
 
     private static String construirNotaProjecao(Map<NivelEstresse, ResultadoTesteEstresse> mapa) {
-        // Pega primeiro nivel com dados para exemplo; se tiver múltiplos, lista todos
-        StringBuilder sb = new StringBuilder("* Projecao proxima afericao: ");
+        StringBuilder sb = new StringBuilder("* Tendência: se repetir agora, deve ficar perto de ");
         boolean primeiro = true;
         for (NivelEstresse nivel : NivelEstresse.values()) {
             ResultadoTesteEstresse r = mapa.get(nivel);
             if (r == null) continue;
             if (!primeiro) sb.append("  •  ");
-            sb.append(String.format(Locale.US, "%s %s (%d amostras, desvio %.2f)",
-                    nivel.name(), Formatador.formatarPercentual(r.estimarProximaCpu()),
-                    r.obterQuantidadeAmostras(), r.obterDesvioPadraoCpu()));
+            sb.append(String.format(Locale.US, "%s %s (baseado nas últimas %d leituras)",
+                    nivel.obterRotulo().replace(" (base)", ""), Formatador.formatarPercentual(r.estimarProximaCpu()),
+                    Math.min(10, (int) r.obterQuantidadeAmostras())));
             primeiro = false;
         }
         if (primeiro) return "";
         return sb.toString();
+    }
+
+    private static String construirResumoLeigo(Map<NivelEstresse, ResultadoTesteEstresse> mapa) {
+        if (mapa == null || mapa.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (NivelEstresse nivel : NivelEstresse.values()) {
+            ResultadoTesteEstresse r = mapa.get(nivel);
+            if (r == null) continue;
+            String situacao = nivel.obterRotulo().replace(" (base)", "");
+            String avaliacao = r.obterSeloDesempenho();
+            String fraseAvaliacao = switch (avaliacao) {
+                case "Ótimo" -> "tranquilo para navegar e editar textos";
+                case "Atenção" -> "exigiu bastante, ainda dentro do esperado";
+                default -> "exigiu muito — verifique ventilação se repetir";
+            };
+            sb.append(String.format(Locale.US,
+                    "Em %s, seu sistema usou %.1f%% em média (pico %.1f%%) e memória %.1f%%, resposta %.1f ms — Avaliação %s, %s.\n",
+                    situacao.toLowerCase(), r.obterMediaCpu(), r.obterMaximoCpu(),
+                    r.obterMediaMemoria(), r.obterMediaTempoRespostaMs(), avaliacao, fraseAvaliacao));
+        }
+        if (mapa.size() >= 2) {
+            // Delta leigo se houver Normal e Alto
+            ResultadoTesteEstresse normal = mapa.get(NivelEstresse.NORMAL);
+            ResultadoTesteEstresse alto = mapa.get(NivelEstresse.ALTO);
+            if (normal != null && alto != null) {
+                double delta = alto.obterMediaCpu() - normal.obterMediaCpu();
+                sb.append(String.format(Locale.US, "\nComparando repouso e esforço máximo, o uso subiu %.1f pontos — %s",
+                        delta, delta > 50 ? "seu PC alcança carga facilmente, bom para teste de estabilidade." : "variação moderada."));
+            }
+        }
+        return sb.toString().trim();
     }
 
     private static String limparResumo(String texto) {
@@ -297,6 +374,43 @@ public final class ExportadorPdf {
         c.setPadding(4);
         c.setBorderColor(CINZA_BORDA);
         return c;
+    }
+
+    /** Célula com valor + subtítulo leigo em tamanho menor (ex: 33,3% — uso leve). */
+    private static PdfPCell celulaCentroExplicativo(String valor, String explicacao) {
+        Paragraph p = new Paragraph();
+        p.setAlignment(Element.ALIGN_CENTER);
+        p.add(new Phrase(valor + "\n", FONTE_NORMAL));
+        p.add(new Phrase(explicacao, FontFactory.getFont(FontFactory.HELVETICA, 6, new Color(90, 90, 90))));
+        PdfPCell c = new PdfPCell(p);
+        c.setHorizontalAlignment(Element.ALIGN_CENTER);
+        c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        c.setPadding(3);
+        c.setBorderColor(CINZA_BORDA);
+        return c;
+    }
+
+    private static String interpretarUso(double percentual) {
+        if (Double.isNaN(percentual)) return "";
+        if (percentual < 30) return "uso leve";
+        if (percentual < 60) return "uso moderado";
+        if (percentual < 85) return "uso alto";
+        return "uso muito alto";
+    }
+
+    private static String interpretarPico(double pico) {
+        if (Double.isNaN(pico)) return "";
+        if (pico < 60) return "pico tranquilo";
+        if (pico < 85) return "pico alto";
+        if (pico < 95) return "pico critico";
+        return "pico extremo";
+    }
+
+    private static String interpretarResposta(double ms) {
+        if (Double.isNaN(ms)) return "";
+        if (ms < 5) return "rapido";
+        if (ms < 15) return "normal";
+        return "lento";
     }
 
     private static String obterHostName() {
