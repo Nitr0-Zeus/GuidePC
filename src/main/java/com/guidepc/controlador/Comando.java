@@ -1,8 +1,6 @@
 package com.guidepc.controlador;
 
-/**
- * Comando - Acao do menu via padrao Comando. Evita if-else no Principal.
- */
+/** Contrato do padrao Comando para as opcoes do menu principal. */
 public interface Comando {
 
     void executar();

@@ -24,7 +24,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * ServicoColetorHardware - Regra de negocio. Thread-safe onde acessa hardware.
+ * Fachada para leitura de hardware via OSHI.
+ *
+ * <p>Singleton thread-safe: todas as leituras que acessam o HAL sao sincronizadas,
+ * pois o OSHI nao garante seguranca para chamadas concorrentes. O calculo de
+ * carga de CPU usa ticks entre chamadas para maior precisao.</p>
  */
 public class ServicoColetorHardware {
 
@@ -44,11 +48,10 @@ public class ServicoColetorHardware {
     }
 
     public static synchronized ServicoColetorHardware obterInstancia() {
-        return Optional.ofNullable(instanciaUnica)
-                .orElseGet(() -> {
-                    instanciaUnica = new ServicoColetorHardware();
-                    return instanciaUnica;
-                });
+        if (instanciaUnica == null) {
+            instanciaUnica = new ServicoColetorHardware();
+        }
+        return instanciaUnica;
     }
 
     public synchronized InformacoesHardware coletarTudo() {
@@ -74,14 +77,12 @@ public class ServicoColetorHardware {
         long[] frequenciasAtuais = processadorCentral.getCurrentFreq();
         long frequenciaMaxima = processadorCentral.getMaxFreq();
 
-        long frequenciaMaximaHz = switch (Long.toString(frequenciaMaxima)) {
-            case "0" -> identificador.getVendorFreq();
-            default -> frequenciaMaxima;
-        };
+        // Fallback: se maxFreq vier 0 (comum em VMs), usa vendorFreq
+        long frequenciaMaximaHz = frequenciaMaxima != 0 ? frequenciaMaxima : identificador.getVendorFreq();
         long frequenciaBaseHz = frequenciaMaximaHz;
 
         double percentualUso = this.obterPercentualCargaCpu();
-        double temperatura = 0.0;
+        double temperatura;
         try {
             temperatura = this.camadaHardware.getSensors().getCpuTemperature();
         } catch (Exception excecao) {
@@ -105,27 +106,28 @@ public class ServicoColetorHardware {
         );
     }
 
+    /**
+     * Calcula carga de CPU. Se a ultima coleta foi ha menos de 250 ms,
+     * usa medicao com delay (mais estavel); caso contrario usa delta de ticks.
+     */
     public synchronized double obterPercentualCargaCpu() {
         try {
             long instanteAtual = System.currentTimeMillis();
             long diferencaMillis = instanteAtual - this.instanteAnteriorMillis;
 
-            // Sem if: usa switch em comparacao
-            return switch (Boolean.toString(diferencaMillis < 250)) {
-                case "true" -> this.camadaHardware.getProcessor().getSystemCpuLoad(300) * 100.0;
-                default -> {
-                    double carga = this.camadaHardware.getProcessor().getSystemCpuLoadBetweenTicks(this.ticksAnteriores) * 100.0;
-                    this.ticksAnteriores = this.camadaHardware.getProcessor().getSystemCpuLoadTicks();
-                    this.instanteAnteriorMillis = instanteAtual;
-                    double cargaLimitada = Math.max(0.0, Math.min(100.0, carga));
-                    // Trata NaN sem if via OptionalDouble
-                    boolean cargaInvalida = Double.isNaN(cargaLimitada);
-                    yield switch (Boolean.toString(cargaInvalida)) {
-                        case "true" -> 0.0;
-                        default -> cargaLimitada;
-                    };
-                }
-            };
+            if (diferencaMillis < 250) {
+                return this.camadaHardware.getProcessor().getSystemCpuLoad(300) * 100.0;
+            }
+
+            double carga = this.camadaHardware.getProcessor().getSystemCpuLoadBetweenTicks(this.ticksAnteriores) * 100.0;
+            this.ticksAnteriores = this.camadaHardware.getProcessor().getSystemCpuLoadTicks();
+            this.instanteAnteriorMillis = instanteAtual;
+
+            double cargaLimitada = Math.max(0.0, Math.min(100.0, carga));
+            if (Double.isNaN(cargaLimitada)) {
+                return 0.0;
+            }
+            return cargaLimitada;
         } catch (Exception excecao) {
             return Double.NaN;
         }
@@ -148,8 +150,8 @@ public class ServicoColetorHardware {
         for (HWDiskStore disco : this.camadaHardware.getDiskStores()) {
             try {
                 disco.updateAttributes();
-            } catch (Exception excecao) {
-                // ignora, sem if
+            } catch (Exception ignored) {
+                // updateAttributes pode falhar sem permissao SMART; segue com dados em cache
             }
             List<String> pontosMontagem = new ArrayList<>();
             for (HWPartition particao : disco.getPartitions()) {
@@ -220,14 +222,10 @@ public class ServicoColetorHardware {
     }
 
     private String formatarVram(long vramBytes) {
-        return switch (Long.toString(vramBytes)) {
-            case "0" -> "N/A";
-            default -> Formatador.formatarBytes(vramBytes);
-        };
-    }
-
-    private String protegerTextoSimples(String textoOriginal) {
-        return this.protegerTexto(textoOriginal);
+        if (vramBytes == 0) {
+            return "N/A";
+        }
+        return Formatador.formatarBytes(vramBytes);
     }
 
     public SystemInfo obterInformacoesSistema() {

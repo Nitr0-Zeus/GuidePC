@@ -12,11 +12,20 @@ import com.guidepc.servico.ServicoTesteEstresse;
 import com.guidepc.visao.VisaoConsole;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Scanner;
 
 /**
- * Principal - Ponto de entrada. Loop do menu e despacho de comandos. Adicionar opcoes aqui.
+ * Ponto de entrada da aplicacao.
+ *
+ * <p>Responsabilidades:</p>
+ * <ul>
+ *   <li>instancia os servicos (coleta, estresse, comparacao);</li>
+ *   <li>monta o roteamento de opcoes do menu via padrao Comando;</li>
+ *   <li>mantem o loop principal ate o usuario sair ou a entrada ser encerrada.</li>
+ * </ul>
+ *
+ * <p>O mapa de comandos evita if/else encadeado no menu - cada opcao
+ * e uma classe que implementa {@link Comando}.</p>
  */
 public class Principal {
 
@@ -26,7 +35,7 @@ public class Principal {
         ServicoComparacao servicoComparacao = new ServicoComparacao();
         Scanner scannerEntrada = new Scanner(System.in);
 
-        // Mapa de comandos: elimina if-else via polimorfismo
+        // Roteamento do menu: chave = opcao digitada, valor = acao correspondente.
         Map<Integer, Comando> mapaComandos = Map.of(
                 1, new ComandoVisaoGeral(servicoColetorHardware),
                 2, new ComandoTesteEstresse(servicoTesteEstresse, servicoComparacao, scannerEntrada),
@@ -41,9 +50,13 @@ public class Principal {
 
         while (true) {
             exibirMenu();
-            String textoDigitado = lerLinhaSegura(scannerEntrada).trim();
+            String textoDigitado = lerLinhaSegura(scannerEntrada);
+            if (textoDigitado == null) {
+                VisaoConsole.exibirLinha("Entrada encerrada, saindo...");
+                return;
+            }
 
-            int opcaoEscolhida = converterParaInteiro(textoDigitado);
+            int opcaoEscolhida = converterParaInteiro(textoDigitado.trim());
             Comando comandoSelecionado = mapaComandos.getOrDefault(opcaoEscolhida, new ComandoInvalido());
 
             try {
@@ -54,14 +67,9 @@ public class Principal {
 
             VisaoConsole.exibirLinha("Pressione ENTER para continuar...");
             String linhaContinuar = lerLinhaSegura(scannerEntrada);
-            // Usa switch para tratar EOF sem if
-            switch (Boolean.toString(linhaContinuar == null)) {
-                case "true" -> {
-                    VisaoConsole.exibirLinha("Entrada encerrada, saindo...");
-                    return;
-                }
-                default -> {
-                }
+            if (linhaContinuar == null) {
+                VisaoConsole.exibirLinha("Entrada encerrada, saindo...");
+                return;
             }
         }
     }
@@ -77,22 +85,30 @@ public class Principal {
         System.out.print("Escolha uma opcao (1-4): ");
     }
 
+    /**
+     * Converte texto para inteiro; retorna -1 se nao for numero valido.
+     * O valor -1 cai no ComandoInvalido via getOrDefault.
+     */
     private static int converterParaInteiro(String textoOriginal) {
-        return Optional.ofNullable(textoOriginal)
-                .map(texto -> {
-                    try {
-                        return Integer.parseInt(texto);
-                    } catch (NumberFormatException excecaoFormato) {
-                        return -1;
-                    }
-                })
-                .orElse(-1);
+        if (textoOriginal == null || textoOriginal.isBlank()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(textoOriginal);
+        } catch (NumberFormatException excecao) {
+            return -1;
+        }
     }
 
+    /**
+     * Le a proxima linha do scanner de forma segura.
+     * Retorna null quando a entrada foi encerrada (ex: pipe fechado / CTRL+D),
+     * o que permite encerrar o programa sem excecao.
+     */
     private static String lerLinhaSegura(Scanner scannerEntrada) {
-        return switch (Boolean.toString(scannerEntrada.hasNextLine())) {
-            case "true" -> scannerEntrada.nextLine();
-            default -> null;
-        };
+        if (scannerEntrada.hasNextLine()) {
+            return scannerEntrada.nextLine();
+        }
+        return null;
     }
 }

@@ -6,9 +6,7 @@ import com.guidepc.utilitario.Formatador;
 
 import java.util.List;
 
-/**
- * VisaoGeralConsole - Impressao console. Tabela ASCII e barra de progresso.
- */
+/** Renderiza a visao geral de hardware em secoes (CPU, RAM, discos, placa-mae, SO, GPU). */
 public final class VisaoGeralConsole {
 
     private VisaoGeralConsole() {
@@ -19,7 +17,6 @@ public final class VisaoGeralConsole {
         VisaoConsole.exibirLinha("Dados coletados via OSHI (sem acesso a dados privados)");
         VisaoConsole.exibirSeparador();
 
-        // Processador
         VisaoConsole.exibirLinha("[PROCESSADOR]");
         VisaoConsole.exibirLinha("  Fabricante e Modelo : " + informacoesHardware.processador().fabricante() + " " + informacoesHardware.processador().modelo());
         VisaoConsole.exibirLinha("  Microarquitetura    : " + informacoesHardware.processador().microarquitetura());
@@ -32,7 +29,6 @@ public final class VisaoGeralConsole {
         VisaoConsole.exibirLinha("  Temperatura         : " + Formatador.formatarTemperatura(informacoesHardware.processador().temperaturaCelsius()));
         VisaoConsole.exibirSeparador();
 
-        // Memoria
         VisaoConsole.exibirLinha("[MEMORIA RAM]");
         VisaoConsole.exibirLinha("  Total               : " + Formatador.formatarBytes(informacoesHardware.memoria().totalBytes()));
         VisaoConsole.exibirLinha("  Disponivel          : " + Formatador.formatarBytes(informacoesHardware.memoria().disponivelBytes()));
@@ -40,22 +36,19 @@ public final class VisaoGeralConsole {
         VisaoConsole.exibirLinha("  Tamanho Pagina      : " + Formatador.formatarBytes(informacoesHardware.memoria().tamanhoPaginaBytes()));
         VisaoConsole.exibirSeparador();
 
-        // Discos
         VisaoConsole.exibirLinha("[DISCOS]");
         List<InformacoesDisco> listaDiscos = informacoesHardware.discos();
-        switch (Boolean.toString(listaDiscos.isEmpty())) {
-            case "true" -> VisaoConsole.exibirLinha("  Nenhum disco detectado ou sem permissao");
-            default -> {
-                for (InformacoesDisco discoAtual : listaDiscos) {
-                    String pontosMontagem = discoAtual.pontosMontagem().isEmpty() ? "sem ponto de montagem" : String.join(", ", discoAtual.pontosMontagem());
-                    VisaoConsole.exibirLinha("  - " + discoAtual.nome() + " | " + discoAtual.modelo() + " | " + Formatador.formatarBytes(discoAtual.tamanhoBytes()) + " | " + discoAtual.tipoInferido() + " | Montagem: " + pontosMontagem);
-                    VisaoConsole.exibirLinha("    Leituras: " + discoAtual.leituras() + " Escritas: " + discoAtual.escritas());
-                }
+        if (listaDiscos.isEmpty()) {
+            VisaoConsole.exibirLinha("  Nenhum disco detectado ou sem permissao");
+        } else {
+            for (InformacoesDisco discoAtual : listaDiscos) {
+                String pontosMontagem = discoAtual.pontosMontagem().isEmpty() ? "sem ponto de montagem" : String.join(", ", discoAtual.pontosMontagem());
+                VisaoConsole.exibirLinha("  - " + discoAtual.nome() + " | " + discoAtual.modelo() + " | " + Formatador.formatarBytes(discoAtual.tamanhoBytes()) + " | " + discoAtual.tipoInferido() + " | Montagem: " + pontosMontagem);
+                VisaoConsole.exibirLinha("    Leituras: " + discoAtual.leituras() + " Escritas: " + discoAtual.escritas());
             }
         }
         VisaoConsole.exibirSeparador();
 
-        // Placa mae e BIOS
         VisaoConsole.exibirLinha("[PLACA MAE / BIOS]");
         VisaoConsole.exibirLinha("  Fabricante Placa    : " + informacoesHardware.placaMae().fabricante());
         VisaoConsole.exibirLinha("  Modelo Placa        : " + informacoesHardware.placaMae().modelo());
@@ -66,7 +59,6 @@ public final class VisaoGeralConsole {
         VisaoConsole.exibirLinha("  Data BIOS           : " + informacoesHardware.placaMae().dataLancamentoBios());
         VisaoConsole.exibirSeparador();
 
-        // Sistema operacional
         VisaoConsole.exibirLinha("[SISTEMA OPERACIONAL]");
         VisaoConsole.exibirLinha("  Familia             : " + informacoesHardware.sistemaOperacional().familia());
         VisaoConsole.exibirLinha("  Versao              : " + informacoesHardware.sistemaOperacional().versao());
@@ -76,15 +68,13 @@ public final class VisaoGeralConsole {
         VisaoConsole.exibirLinha("  Tempo Atividade     : " + Formatador.formatarTempoAtividade(informacoesHardware.sistemaOperacional().tempoAtividadeSegundos()));
         VisaoConsole.exibirSeparador();
 
-        // GPU
         VisaoConsole.exibirLinha("[PLACA GRAFICA - GPU]");
         List<String> listaGpu = informacoesHardware.nomesGpu();
-        switch (Boolean.toString(listaGpu.isEmpty())) {
-            case "true" -> VisaoConsole.exibirLinha("  Nao disponivel");
-            default -> {
-                for (String nomeGpu : listaGpu) {
-                    VisaoConsole.exibirLinha("  - " + nomeGpu);
-                }
+        if (listaGpu.isEmpty()) {
+            VisaoConsole.exibirLinha("  Nao disponivel");
+        } else {
+            for (String nomeGpu : listaGpu) {
+                VisaoConsole.exibirLinha("  - " + nomeGpu);
             }
         }
         VisaoConsole.exibirSeparador();

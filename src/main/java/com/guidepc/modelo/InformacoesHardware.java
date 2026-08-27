@@ -3,7 +3,8 @@ package com.guidepc.modelo;
 import java.util.List;
 
 /**
- * InformacoesHardware - Modelo imutavel. Campos mapeados do OSHI, usados em Servico e Visao.
+ * Agregado imutavel com todo o hardware coletado via OSHI.
+ * Usado pela visao geral para impressao em console.
  */
 public record InformacoesHardware(
         InformacoesProcessador processador,

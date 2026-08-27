@@ -1,11 +1,8 @@
 package com.guidepc.visao;
 
 /**
- * Utilitario base para impressao no console com formatacao padrao.
- */
-
-/**
- * VisaoConsole - Impressao console. Tabela ASCII e barra de progresso.
+ * Utilitario base para saida em console.
+ * Centraliza cabecalho, separador e barra de progresso para manter padrao visual.
  */
 public final class VisaoConsole {
 
@@ -43,22 +40,22 @@ public final class VisaoConsole {
     }
 
     public static void limparTelaSimples() {
-        for (int indiceLinha = 0; indiceLinha < 2; indiceLinha++) {
-            System.out.println();
-        }
+        System.out.println();
+        System.out.println();
     }
 
+    /**
+     * Barra ASCII no formato [####------] 40%.
+     * Usa \r para sobrescrever a linha; quebra linha apenas em 100%.
+     */
     public static void exibirBarraProgresso(int percentualCompleto, int tamanhoBarra) {
         int quantidadePreenchida = percentualCompleto * tamanhoBarra / 100;
         int quantidadeVazia = tamanhoBarra - quantidadePreenchida;
         String barraPreenchida = "#".repeat(quantidadePreenchida);
         String barraVazia = "-".repeat(quantidadeVazia);
         System.out.printf("\r[%s%s] %d%%", barraPreenchida, barraVazia, percentualCompleto);
-        // Usa switch para newline apenas em 100%
-        switch (Integer.toString(percentualCompleto)) {
-            case "100" -> System.out.println();
-            default -> {
-            }
+        if (percentualCompleto == 100) {
+            System.out.println();
         }
     }
 }

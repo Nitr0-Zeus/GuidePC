@@ -1,7 +1,10 @@
 package com.guidepc.modelo;
 
 /**
- * InformacoesSistemaOperacional - Modelo imutavel. Campos mapeados do OSHI, usados em Servico e Visao.
+ * Dados do sistema operacional.
+ *
+ * @param elevado indica se o processo roda com privilegio elevado (admin/root);
+ *                hoje sempre false, reservado para uso futuro.
  */
 public record InformacoesSistemaOperacional(
         String familia,

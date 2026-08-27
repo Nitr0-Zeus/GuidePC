@@ -4,9 +4,7 @@ import com.guidepc.modelo.Amostra;
 import com.guidepc.modelo.NivelEstresse;
 import com.guidepc.utilitario.Formatador;
 
-/**
- * VisaoTesteEstresseConsole - Impressao console. Tabela ASCII e barra de progresso.
- */
+/** Textos especificos do fluxo de teste de estresse (inicio, amostra ao vivo, conclusao). */
 public final class VisaoTesteEstresseConsole {
 
     private VisaoTesteEstresseConsole() {
@@ -20,6 +18,7 @@ public final class VisaoTesteEstresseConsole {
         VisaoConsole.exibirSeparador();
     }
 
+    /** Linha unica sobrescrita com \r; chamada a cada amostra (500 ms). */
     public static void exibirAmostra(Amostra amostra, int percentualProgresso) {
         String linhaAmostra = String.format(
                 "CPU %s | RAM %s | Temp %s | Resp %s | %d%%",

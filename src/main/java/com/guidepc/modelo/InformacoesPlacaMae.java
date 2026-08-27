@@ -1,8 +1,6 @@
 package com.guidepc.modelo;
 
-/**
- * InformacoesPlacaMae - Modelo imutavel. Campos mapeados do OSHI, usados em Servico e Visao.
- */
+/** Dados da placa-mae e BIOS. Todos os campos ja vem sanitizados ("Nao disponivel" quando ausente). */
 public record InformacoesPlacaMae(
         String fabricante,
         String modelo,

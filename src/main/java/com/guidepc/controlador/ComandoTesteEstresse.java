@@ -1,23 +1,17 @@
 package com.guidepc.controlador;
 
-import com.guidepc.modelo.Amostra;
 import com.guidepc.modelo.NivelEstresse;
 import com.guidepc.modelo.ResultadoTesteEstresse;
-import com.guidepc.servico.ServicoColetorHardware;
 import com.guidepc.servico.ServicoComparacao;
 import com.guidepc.servico.ServicoTesteEstresse;
 import com.guidepc.utilitario.Formatador;
 import com.guidepc.visao.VisaoConsole;
 import com.guidepc.visao.VisaoTesteEstresseConsole;
 
-import java.util.Map;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * ComandoTesteEstresse - Acao do menu via padrao Comando. Evita if-else no Principal.
- */
+/** Opcao 2 do menu: coleta nivel/duracao, executa o teste e armazena o resultado. */
 public final class ComandoTesteEstresse implements Comando {
 
     private final ServicoTesteEstresse servicoTesteEstresse;
@@ -47,13 +41,13 @@ public final class ComandoTesteEstresse implements Comando {
             default -> null;
         };
 
-        Optional.ofNullable(nivelEscolhido).orElseGet(() -> {
+        NivelEstresse nivelFinal;
+        if (nivelEscolhido == null) {
             VisaoConsole.exibirErro("Nivel invalido, usando BAIXO como padrao");
-            return NivelEstresse.BAIXO;
-        });
-
-        // Garante nivel valido sem if via Optional
-        NivelEstresse nivelFinal = Optional.ofNullable(nivelEscolhido).orElse(NivelEstresse.BAIXO);
+            nivelFinal = NivelEstresse.BAIXO;
+        } else {
+            nivelFinal = nivelEscolhido;
+        }
 
         VisaoTesteEstresseConsole.exibirOpcoesDuracao();
         VisaoConsole.exibirLinha("Digite 1 a 4:");
@@ -67,10 +61,8 @@ public final class ComandoTesteEstresse implements Comando {
             default -> 30;
         };
 
-        switch (textoDuracao) {
-            case "1", "2", "3", "4" -> {
-            }
-            default -> VisaoConsole.exibirAviso("Duracao invalida, usando 30s padrao");
+        if (!textoDuracao.equals("1") && !textoDuracao.equals("2") && !textoDuracao.equals("3") && !textoDuracao.equals("4")) {
+            VisaoConsole.exibirAviso("Duracao invalida, usando 30s padrao");
         }
 
         VisaoTesteEstresseConsole.exibirInicio(nivelFinal, duracaoEscolhida);
@@ -112,9 +104,9 @@ public final class ComandoTesteEstresse implements Comando {
     }
 
     private String lerLinhaSegura() {
-        return switch (Boolean.toString(this.scannerEntrada.hasNextLine())) {
-            case "true" -> this.scannerEntrada.nextLine();
-            default -> "";
-        };
+        if (this.scannerEntrada.hasNextLine()) {
+            return this.scannerEntrada.nextLine();
+        }
+        return "";
     }
 }

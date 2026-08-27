@@ -1,7 +1,13 @@
 package com.guidepc.modelo;
 
 /**
- * NivelEstresse - Niveis NORMAL 0%, BAIXO 50%, ALTO 100%+mem.
+ * Nivel de carga aplicado durante o teste de estresse.
+ *
+ * <ul>
+ *   <li>{@link #NORMAL} - apenas monitora, sem carga artificial (baseline).</li>
+ *   <li>{@link #BAIXO} - ocupa ~50% dos nucleos logicos com calculo matematico continuo.</li>
+ *   <li>{@link #ALTO} - ocupa 100% dos nucleos + aloca memoria ate 60% da RAM livre, limitado a 2 GB.</li>
+ * </ul>
  */
 public enum NivelEstresse {
 
@@ -33,6 +39,7 @@ public enum NivelEstresse {
         return this.fatorCpu;
     }
 
+    /** Indica se o nivel deve tambem pressionar memoria (apenas ALTO). */
     public boolean deveAlocarMemoria() {
         return this.alocarMemoria;
     }

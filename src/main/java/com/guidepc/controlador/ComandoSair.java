@@ -2,9 +2,7 @@ package com.guidepc.controlador;
 
 import com.guidepc.visao.VisaoConsole;
 
-/**
- * ComandoSair - Acao do menu via padrao Comando. Evita if-else no Principal.
- */
+/** Opcao 4 do menu: encerra a aplicacao. */
 public final class ComandoSair implements Comando {
 
     @Override

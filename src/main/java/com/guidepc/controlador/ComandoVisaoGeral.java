@@ -4,9 +4,7 @@ import com.guidepc.modelo.InformacoesHardware;
 import com.guidepc.servico.ServicoColetorHardware;
 import com.guidepc.visao.VisaoGeralConsole;
 
-/**
- * ComandoVisaoGeral - Acao do menu via padrao Comando. Evita if-else no Principal.
- */
+/** Opcao 1 do menu: coleta hardware via OSHI e imprime a visao geral. */
 public final class ComandoVisaoGeral implements Comando {
 
     private final ServicoColetorHardware servicoColetorHardware;
