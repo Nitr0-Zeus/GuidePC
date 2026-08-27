@@ -44,6 +44,16 @@ public final class VisaoConsole {
         System.out.println();
     }
 
+    /** Marca d'água ASCII do projeto — exibida somente no MENU PRINCIPAL. */
+    public static void exibirMarcaDagua() {
+        System.out.println("  ________      .__    .___    ___________________  ");
+        System.out.println(" /  _____/ __ __|__| __| _/____\\______   \\_   ___ \\ ");
+        System.out.println("/   \\  ___|  |  \\  |/ __ |/ __ \\|     ___/    \\  \\/ ");
+        System.out.println("\\    \\_\\  \\  |  /  / /_/ \\  ___/|    |   \\     \\____");
+        System.out.println(" \\______  /____/|__\\____ |\\___  >____|    \\______  /");
+        System.out.println("        \\/              \\/    \\/                 \\/ ");
+    }
+
     /**
      * Barra ASCII no formato [####------] 40%.
      * Usa \r para sobrescrever a linha; quebra linha apenas em 100%.

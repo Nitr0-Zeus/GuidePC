@@ -76,6 +76,7 @@ public class Principal {
 
     private static void exibirMenu() {
         VisaoConsole.exibirLinha("");
+        VisaoConsole.exibirMarcaDagua();
         VisaoConsole.exibirCabecalho("MENU PRINCIPAL");
         VisaoConsole.exibirLinha("[1] Visao Geral - Exibir hardware (CPU, RAM, Disco, Placa, GPU)");
         VisaoConsole.exibirLinha("[2] Teste de Estresse - Normal / Baixo / Alto (15s a 120s)");
