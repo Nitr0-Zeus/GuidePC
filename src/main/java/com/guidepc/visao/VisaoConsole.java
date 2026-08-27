@@ -44,6 +44,30 @@ public final class VisaoConsole {
         System.out.println();
     }
 
+    /**
+     * Limpa o console para a proxima acao deixar a visao limpa.
+     * Tenta via comando nativo (cls/clear) e cai para ANSI + quebras se falhar.
+     * Mantem a cor atual (color 0C) — cls preserva a cor do run.bat.
+     */
+    public static void limparTela() {
+        try {
+            String sistema = System.getProperty("os.name", "").toLowerCase();
+            if (sistema.contains("win")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception ignored) {
+            // Fallback: ANSI + varias quebras garante visao limpa em qualquer terminal
+            System.out.print("\033[H\033[2J");
+            System.out.flush();
+            for (int i = 0; i < 30; i++) {
+                System.out.println();
+            }
+        }
+    }
+
     /** Marca d'água ASCII do projeto — exibida somente no MENU PRINCIPAL. */
     public static void exibirMarcaDagua() {
         System.out.println("  ________      .__    .___    ___________________  ");

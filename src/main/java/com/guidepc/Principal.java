@@ -48,7 +48,14 @@ public class Principal {
         VisaoConsole.exibirLinha("Sem interface grafica, ideal para PCs simples");
         VisaoConsole.exibirSeparador();
 
+        boolean primeiraVez = true;
         while (true) {
+            // Limpa o menu anterior a cada volta, deixando só a saída da última ação visível até o ENTER
+            if (!primeiraVez) {
+                VisaoConsole.limparTela();
+            }
+            primeiraVez = false;
+
             exibirMenu();
             String textoDigitado = lerLinhaSegura(scannerEntrada);
             if (textoDigitado == null) {
@@ -58,6 +65,9 @@ public class Principal {
 
             int opcaoEscolhida = converterParaInteiro(textoDigitado.trim());
             Comando comandoSelecionado = mapaComandos.getOrDefault(opcaoEscolhida, new ComandoInvalido());
+
+            // Limpa antes de executar para a ação aparecer em tela limpa
+            VisaoConsole.limparTela();
 
             try {
                 comandoSelecionado.executar();
