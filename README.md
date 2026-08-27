@@ -24,12 +24,13 @@ Sistema em Java 21 que lê seu hardware de verdade, faz teste de estresse e comp
 
 O GuidePC pega informações do seu hardware (CPU, RAM, disco, placa-mãe, BIOS, sistema e GPU) usando OSHI — nada de dado pessoal, só hardware mesmo.
 
-Depois roda testes em 3 níveis diferentes e no final te mostra um comparativo com média, pico, desvio e até uma estimativa do próximo resultado. Dá pra exportar tudo em CSV.
+Depois roda testes em 3 níveis diferentes e no final te mostra um comparativo com média, pico, desvio e até uma estimativa do próximo resultado. Dá pra exportar em CSV e PDF (backup físico em `relatorios/`).
 
-Nessa versão 2.0:
+Nessa versão 2.1:
 - Leitura completa via OSHI (funciona em Windows/Linux/macOS)
 - Teste de CPU/memória com métricas ao vivo
-- Comparativo e exportação CSV
+- Comparativo no console + exportação CSV e PDF local
+- PDF com data/hora da coleta e usuário logado — pronto para imprimir/entregar
 - Código revisado, sem gambiarras, com comentários objetivos
 
 O que NÃO faz (por enquanto): mexer em overclock, testar GPU pesado ou mandar dado pra nuvem.
@@ -40,7 +41,7 @@ Porque a ideia é rodar em qualquer PC, até aquele com 4GB de RAM da escola ou 
 
 | Console (como o GuidePC é) | Com interface gráfica (JavaFX/Swing) |
 |---|---|
-| Jar de 4,5 MB, abre em menos de 1s, usa ~60-80 MB | Jar de 14 MB+, abre em 3-5s, pede 150-300 MB e placa de vídeo |
+| Jar de ~6 MB, abre em menos de 1s, usa ~60-80 MB | Jar de 14 MB+, abre em 3-5s, pede 150-300 MB e placa de vídeo |
 | Roda só com `java -jar`, sem frescura | Precisa de `module-path`, JavaFX e driver de vídeo |
 | Funciona até por SSH, sem monitor | Precisa de tela, não roda em servidor |
 
@@ -71,7 +72,8 @@ MVC adaptado pra console, tudo em pt-br:
 ```
 GuidePC/
 ├── pom.xml
-├── run.bat                          # atalho pra java -jar target/guidepc-2.0.jar
+├── run.bat                          # atalho pra java -jar target/guidepc-2.1.jar
+├── relatorios/                      # PDFs/CSVs gerados (backup físico, ignorado no git)
 └── src/main/java/com/guidepc/
     ├── Principal.java               # menu principal
     ├── modelo/
@@ -87,7 +89,9 @@ GuidePC/
     ├── servico/
     │   ├── ServicoColetorHardware.java
     │   ├── ServicoTesteEstresse.java
-    │   └── ServicoComparacao.java
+    │   ├── ServicoComparacao.java
+    │   ├── ExportadorCsv.java       # gera CSV para relatorios/
+    │   └── ExportadorPdf.java       # gera PDF com data/hora + usuário
     ├── visao/
     │   ├── VisaoConsole.java
     │   ├── VisaoGeralConsole.java
@@ -97,10 +101,12 @@ GuidePC/
     │   ├── Comando.java
     │   ├── ComandoVisaoGeral.java
     │   ├── ComandoTesteEstresse.java
-    │   ├── ComandoComparativo.java
+    │   ├── ComandoComparativo.java  # menu CSV/PDF/Ambos
     │   ├── ComandoSair.java
     │   └── ComandoInvalido.java
-    └── utilitario/Formatador.java
+    └── utilitario/
+        ├── Formatador.java
+        └── NomeArquivo.java         # gera nome com data + usuário sanitizado
 ```
 
 Quer mexer? Adiciona campo no `modelo`, ajusta o `ServicoColetorHardware` e atualiza a `VisaoGeralConsole`.
@@ -112,12 +118,13 @@ Quer mexer? Adiciona campo no `modelo`, ajusta o `ServicoColetorHardware` e atua
 | Linguagem | Java (Temurin) | 21 | Base do projeto, `release 21` no `pom.xml` |
 | Coleta de hardware | OSHI | 6.6.4 | Lê CPU, RAM, discos, placa-mãe e sensores (ver §6) |
 | Acesso nativo | JNA + JNA Platform | 5.15.0 | Ponte que o OSHI usa pra chamar APIs do SO (WMI, /proc, IOKit) |
+| Relatório PDF | OpenPDF | 1.3.35 | Gera PDF local em `relatorios/` com tabela e metadados |
 | Log | SLF4J Simple | 2.0.16 | Log leve; mostra `warn` do OSHI quando sensor não existe |
-| Build | Maven + Shade Plugin | 3.9+ / 3.6.0 | Compila e gera `guidepc-2.0.jar` fat com `Main-Class` |
+| Build | Maven + Shade Plugin | 3.9+ / 3.6.0 | Compila e gera `guidepc-2.1.jar` fat com `Main-Class` |
 | Teste | JUnit Jupiter | 5.11.0 | Testes em `src/test/java` (`FormatadorTeste`, `ServicoComparacaoTeste`) |
 | Execução | `run.bat` | — | Atalho Windows que faz `chcp 65001` e roda o jar |
 
-> Todas as versões estão fixadas em `pom.xml` (`oshi.versao`, `jna.versao`, etc.) pra build reprodutível.
+> Todas as versões estão fixadas em `pom.xml` (`oshi.versao`, `jna.versao`, `openpdf.versao` etc.) pra build reprodutível.
 
 ## 6. O que é OSHI?
 
@@ -164,7 +171,7 @@ cd GuidePC
 mvn clean package -DskipTests
 
 # rodar (recomendado)
-java -jar target/guidepc-2.0.jar
+java -jar target/guidepc-2.1.jar
 # ou só clicar/duplo clique em
 run.bat
 ```
@@ -173,7 +180,7 @@ run.bat
 ```bat
 @echo off
 chcp 65001 >nul
-java -jar target\guidepc-2.0.jar
+java -jar target\guidepc-2.1.jar
 ```
 
 Pra rodar os testes:
@@ -186,11 +193,11 @@ mvn test
 ### Menu principal
 ```
 ============================================================
- GuidePC v2.0 - MONITORAMENTO DE HARDWARE
+ GuidePC v2.1 - MONITORAMENTO DE HARDWARE
 ============================================================
 [1] Visão Geral - Exibir hardware (CPU, RAM, Disco, Placa, GPU)
 [2] Teste de Estresse - Normal / Baixo / Alto (15s a 120s)
-[3] Comparativo - Atual vs Próximo + exportar CSV
+[3] Comparativo - Atual vs Próximo + exportar CSV/PDF (relatorios/)
 [4] Sair
 Escolha uma opcao (1-4):
 ```
@@ -211,17 +218,24 @@ Mostra tudo: fabricante/modelo da CPU, núcleos, frequência, uso e temperatura;
 Segurança: no nível Alto ele só aloca até 60% da RAM livre e no máximo 2GB. Se ficar com menos de 200MB livres, solta metade e faz `GC`.
 
 ### Opção 3 - Comparativo
-Mostra tabela assim:
+Mostra tabela no console e oferece backup físico:
 ```
 NIVEL        | MEDIA CPU  | PICO CPU   | MEDIA RAM  | RESP MEDIA   | SELO
 NORMAL       | 40,4%      | 47,5%      | 87,4%      | 4,8 ms       | Bom
   -> Estimativa prox CPU: 40,0% | Amostras: 33 | Desvio CPU: 3.26
 ```
-E um resumo tipo `Normal->Alto +X%`. Pergunta `Deseja exportar CSV? (s/n)` e gera o `guidepc_relatorio.csv` na pasta do programa:
+E resumo tipo `Normal->Alto +X%`. Depois pergunta:
 ```
-nivel,duracao_s,amostras,media_cpu,max_cpu,min_cpu,desvio_cpu,...
-NORMAL,15,33,40.40,47.50,35.20,3.26,...
+Exportar relatório (backup físico em relatorios/):
+  [1] CSV   [2] PDF   [3] Ambos   [4] Cancelar
+Escolha (1-4) [3]:
 ```
+Isso gera em `relatorios/` (pasta na raiz, ignorada no git):
+```
+relatorios/guidepc_relatorio_2026-08-27_15-30-22_Joao.pdf  # inclui data/hora + usuário logado + dados da máquina
+relatorios/guidepc_relatorio_2026-08-27_15-30-22_Joao.csv
+```
+O PDF já vem com cabeçalho (GuidePC v2.1, data/hora da geração, usuário@host, SO/CPU), tabela comparativa e resumo — pronto para imprimir.
 
 ### Opção 4 - Sair
 Fecha e libera as threads. Se rodar com entrada redirecionada e fechar, sai sozinho com `Entrada encerrada, saindo...`.
@@ -264,9 +278,11 @@ Tirados aqui mesmo — Ryzen 7 5700U, 11,35 GB, Windows 11, console puro:
 | `Nenhum disco detectado` | Sem permissão pro SMART | Roda como administrador se precisar do serial |
 | `OutOfMemoryError` no Alto | Bateu no limite | Ele solta metade da memória e continua |
 | Acento com `?` | Console sem UTF-8 | Usa o `run.bat` que já faz `chcp 65001` |
+| `relatorios/` vazio | Ainda não exportou | Use opção 3 e escolha [1/2/3] |
 
 ## 12. O que vem por aí
 
 - v1.0: console, 3 níveis, CSV (entregue)
-- **v2.0: docs de ferramentas, explica OSHI, código limpo (atual)**
-- v2.1: histórico em SQLite, exportar PDF, teste de disco
+- v2.0: docs de ferramentas, explica OSHI, código limpo (entregue)
+- **v2.1: exportação PDF local com data/hora + usuário, pasta `relatorios/` (atual)**
+- v2.2: teste de disco, gráfico no PDF, histórico filtrável

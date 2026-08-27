@@ -32,5 +32,8 @@ Desktop.ini
 
 # App
 guidepc_relatorio.csv
+relatorios/
+*.pdf
+!docs/**/*.pdf
 *.log
 hs_err_pid*

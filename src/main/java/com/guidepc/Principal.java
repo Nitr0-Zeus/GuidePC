@@ -43,7 +43,7 @@ public class Principal {
                 4, new ComandoSair()
         );
 
-        VisaoConsole.exibirCabecalho("GuidePC v2.0 - MONITORAMENTO DE HARDWARE");
+        VisaoConsole.exibirCabecalho("GuidePC v2.1 - MONITORAMENTO DE HARDWARE");
         VisaoConsole.exibirLinha("Sistema console 100% pt-br | OSHI 6.6.4 | Java 21");
         VisaoConsole.exibirLinha("Sem interface grafica, ideal para PCs simples");
         VisaoConsole.exibirSeparador();
@@ -79,7 +79,7 @@ public class Principal {
         VisaoConsole.exibirCabecalho("MENU PRINCIPAL");
         VisaoConsole.exibirLinha("[1] Visao Geral - Exibir hardware (CPU, RAM, Disco, Placa, GPU)");
         VisaoConsole.exibirLinha("[2] Teste de Estresse - Normal / Baixo / Alto (15s a 120s)");
-        VisaoConsole.exibirLinha("[3] Comparativo - Atual vs Proximo + exportar CSV");
+        VisaoConsole.exibirLinha("[3] Comparativo - Atual vs Proximo + exportar CSV/PDF (relatorios/)");
         VisaoConsole.exibirLinha("[4] Sair");
         VisaoConsole.exibirSeparador();
         System.out.print("Escolha uma opcao (1-4): ");
