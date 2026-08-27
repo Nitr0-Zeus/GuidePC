@@ -65,7 +65,8 @@ public final class ExportadorPdf {
         String hostName = obterHostName();
 
         Document documento = new Document(PageSize.A4, 36, 36, 36, 36);
-        try (FileOutputStream saida = new FileOutputStream(caminhoDestino.toFile())) {
+        FileOutputStream saida = new FileOutputStream(caminhoDestino.toFile());
+        try {
             PdfWriter.getInstance(documento, saida);
             documento.open();
 
@@ -178,6 +179,8 @@ public final class ExportadorPdf {
         } finally {
             if (documento.isOpen()) {
                 documento.close();
+            } else {
+                saida.close();
             }
         }
     }
