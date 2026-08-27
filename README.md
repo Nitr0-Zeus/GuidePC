@@ -9,13 +9,14 @@ Sistema em Java 21 que lê seu hardware de verdade, faz teste de estresse e comp
 2. [Por que só console?](#2-por-que-so-console)
 3. [Pra que teste de estresse?](#3-pra-que-teste-de-estresse)
 4. [Como o projeto está organizado](#4-como-o-projeto-esta-organizado)
-5. [Tecnologias](#5-tecnologias)
-6. [Requisitos](#6-requisitos)
-7. [Como rodar](#7-como-rodar)
-8. [Como usar](#8-como-usar)
-9. [Prints reais](#9-prints-reais)
-10. [Problemas comuns](#10-problemas-comuns)
-11. [O que vem por aí](#11-o-que-vem-por-ai)
+5. [Tecnologias e ferramentas](#5-tecnologias-e-ferramentas)
+6. [O que é OSHI?](#6-o-que-e-oshi)
+7. [Requisitos](#7-requisitos)
+8. [Como rodar](#8-como-rodar)
+9. [Como usar](#9-como-usar)
+10. [Prints reais](#10-prints-reais)
+11. [Problemas comuns](#11-problemas-comuns)
+12. [O que vem por aí](#12-o-que-vem-por-ai)
 
 ---
 
@@ -25,10 +26,11 @@ O GuidePC pega informações do seu hardware (CPU, RAM, disco, placa-mãe, BIOS,
 
 Depois roda testes em 3 níveis diferentes e no final te mostra um comparativo com média, pico, desvio e até uma estimativa do próximo resultado. Dá pra exportar tudo em CSV.
 
-Nessa primeira versão:
+Nessa versão 2.0:
 - Leitura completa via OSHI (funciona em Windows/Linux/macOS)
 - Teste de CPU/memória com métricas ao vivo
 - Comparativo e exportação CSV
+- Código revisado, sem gambiarras, com comentários objetivos
 
 O que NÃO faz (por enquanto): mexer em overclock, testar GPU pesado ou mandar dado pra nuvem.
 
@@ -69,7 +71,7 @@ MVC adaptado pra console, tudo em pt-br:
 ```
 GuidePC/
 ├── pom.xml
-├── run.bat                          # atalho pra java -jar target/guidepc-1.0.0.jar
+├── run.bat                          # atalho pra java -jar target/guidepc-2.0.jar
 └── src/main/java/com/guidepc/
     ├── Principal.java               # menu principal
     ├── modelo/
@@ -103,24 +105,55 @@ GuidePC/
 
 Quer mexer? Adiciona campo no `modelo`, ajusta o `ServicoColetorHardware` e atualiza a `VisaoGeralConsole`.
 
-## 5. Tecnologias
+## 5. Tecnologias e ferramentas
 
-| Camada | O que usa | Versão |
-|---|---|---|
-| Linguagem | Java | 21 (Temurin) |
-| Coleta | OSHI | 6.6.4 |
-| Acesso nativo | JNA | 5.15.0 |
-| Log | SLF4J Simple | 2.0.16 |
-| Build | Maven | 3.9+ |
-| Teste | JUnit | 5.11.0 |
+| Camada | Ferramenta | Versão | Pra que serve |
+|---|---|---|---|
+| Linguagem | Java (Temurin) | 21 | Base do projeto, `release 21` no `pom.xml` |
+| Coleta de hardware | OSHI | 6.6.4 | Lê CPU, RAM, discos, placa-mãe e sensores (ver §6) |
+| Acesso nativo | JNA + JNA Platform | 5.15.0 | Ponte que o OSHI usa pra chamar APIs do SO (WMI, /proc, IOKit) |
+| Log | SLF4J Simple | 2.0.16 | Log leve; mostra `warn` do OSHI quando sensor não existe |
+| Build | Maven + Shade Plugin | 3.9+ / 3.6.0 | Compila e gera `guidepc-2.0.jar` fat com `Main-Class` |
+| Teste | JUnit Jupiter | 5.11.0 | Testes em `src/test/java` (`FormatadorTeste`, `ServicoComparacaoTeste`) |
+| Execução | `run.bat` | — | Atalho Windows que faz `chcp 65001` e roda o jar |
 
-## 6. Requisitos
+> Todas as versões estão fixadas em `pom.xml` (`oshi.versao`, `jna.versao`, etc.) pra build reprodutível.
+
+## 6. O que é OSHI?
+
+**OSHI (Operating System and Hardware Information)** é uma biblioteca Java open-source que abstrai a leitura de hardware e sistema operacional.
+
+Sem ela você teria que escrever JNI/C e chamar APIs diferentes por SO:
+- **Windows:** WMI / Win32 API (`MSAcpi_ThermalZoneTemperature`, `Win32_Processor`)
+- **Linux:** `/proc/cpuinfo`, `/proc/meminfo`, `/sys/class/thermal`
+- **macOS:** IOKit / sysctl
+
+O OSHI já faz isso e expõe tudo em Java puro via `SystemInfo` e `HardwareAbstractionLayer`:
+
+```java
+SystemInfo si = new SystemInfo();
+HardwareAbstractionLayer hal = si.getHardware();
+hal.getProcessor().getSystemCpuLoadTicks(); // ticks pra calcular % CPU
+hal.getMemory().getAvailable();             // RAM livre
+hal.getDiskStores();                        // discos + SMART
+hal.getSensors().getCpuTemperature();       // sensor se houver
+```
+
+**Por que escolhemos OSHI no GuidePC:**
+- Cross-plataforma sem código nativo próprio.
+- Já integra com JNA (não precisa JNI manual).
+- Usado em `ServicoColetorHardware` como singleton sincronizado — o HAL não é thread-safe, por isso todo acesso é `synchronized`.
+- Devolve `Double.NaN` / `0` quando sensor não existe — tratamos com `Formatador` exibindo “Nao disponivel”.
+
+Site: https://github.com/oshi/oshi — licença MIT.
+
+## 7. Requisitos
 
 - JDK 21 (`java -version` pra conferir)
 - Maven 3.9+ (só se for compilar)
 - 100 MB livres, Windows/Linux/macOS
 
-## 7. Como rodar
+## 8. Como rodar
 
 ```bat
 # clonar
@@ -131,7 +164,7 @@ cd GuidePC
 mvn clean package -DskipTests
 
 # rodar (recomendado)
-java -jar target/guidepc-1.0.0.jar
+java -jar target/guidepc-2.0.jar
 # ou só clicar/duplo clique em
 run.bat
 ```
@@ -140,7 +173,7 @@ run.bat
 ```bat
 @echo off
 chcp 65001 >nul
-java -jar target\guidepc-1.0.0.jar
+java -jar target\guidepc-2.0.jar
 ```
 
 Pra rodar os testes:
@@ -148,12 +181,12 @@ Pra rodar os testes:
 mvn test
 ```
 
-## 8. Como usar
+## 9. Como usar
 
 ### Menu principal
 ```
 ============================================================
- GuidePC v1.0.0 - MONITORAMENTO DE HARDWARE
+ GuidePC v2.0 - MONITORAMENTO DE HARDWARE
 ============================================================
 [1] Visão Geral - Exibir hardware (CPU, RAM, Disco, Placa, GPU)
 [2] Teste de Estresse - Normal / Baixo / Alto (15s a 120s)
@@ -193,7 +226,7 @@ NORMAL,15,33,40.40,47.50,35.20,3.26,...
 ### Opção 4 - Sair
 Fecha e libera as threads. Se rodar com entrada redirecionada e fechar, sai sozinho com `Entrada encerrada, saindo...`.
 
-## 9. Prints reais
+## 10. Prints reais
 
 Tirados aqui mesmo — Ryzen 7 5700U, 11,35 GB, Windows 11, console puro:
 
@@ -222,17 +255,18 @@ Tirados aqui mesmo — Ryzen 7 5700U, 11,35 GB, Windows 11, console puro:
 ### Comparativo
 ![Comparativo](docs/prints/04-comparativo.png)
 
-## 10. Problemas comuns
+## 11. Problemas comuns
 
 | O que aparece | Por que | O que fazer |
 |---|---|---|
 | `Temperatura: Nao disponivel` | Sem sensor/driver ou sem permissão de admin | Normal no Windows, não atrapalha o teste |
-| `MSAcpi_ThermalZoneTemperature` warn | OSHI tenta WMI que não existe | Só ignorar |
+| `MSAcpi_ThermalZoneTemperature` warn | OSHI tenta WMI que não existe | Só ignorar (log do SLF4J) |
 | `Nenhum disco detectado` | Sem permissão pro SMART | Roda como administrador se precisar do serial |
 | `OutOfMemoryError` no Alto | Bateu no limite | Ele solta metade da memória e continua |
 | Acento com `?` | Console sem UTF-8 | Usa o `run.bat` que já faz `chcp 65001` |
 
-## 11. O que vem por aí
+## 12. O que vem por aí
 
-- v1: console, 3 níveis, CSV (atual)
-- v2: histórico em SQLite, exportar PDF, teste de disco
+- v1.0: console, 3 níveis, CSV (entregue)
+- **v2.0: docs de ferramentas, explica OSHI, código limpo (atual)**
+- v2.1: histórico em SQLite, exportar PDF, teste de disco

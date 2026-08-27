@@ -43,7 +43,7 @@ public class Principal {
                 4, new ComandoSair()
         );
 
-        VisaoConsole.exibirCabecalho("GuidePC v1.0.0 - MONITORAMENTO DE HARDWARE");
+        VisaoConsole.exibirCabecalho("GuidePC v2.0 - MONITORAMENTO DE HARDWARE");
         VisaoConsole.exibirLinha("Sistema console 100% pt-br | OSHI 6.6.4 | Java 21");
         VisaoConsole.exibirLinha("Sem interface grafica, ideal para PCs simples");
         VisaoConsole.exibirSeparador();
