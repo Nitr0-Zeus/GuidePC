@@ -1,5 +1,6 @@
 package com.guidepc.servico;
 
+import com.guidepc.modelo.Alerta;
 import com.guidepc.modelo.Amostra;
 import com.guidepc.modelo.NivelEstresse;
 import com.guidepc.modelo.ResultadoTesteEstresse;
@@ -35,6 +36,7 @@ import java.util.function.Consumer;
 public class ServicoTesteEstresse {
 
     private final ServicoColetorHardware coletorHardware;
+    private final ServicoAlerta servicoAlerta;
     private ExecutorService poolEstresse;
     private ScheduledExecutorService agendadorAmostras;
     private final AtomicBoolean emExecucao;
@@ -42,10 +44,19 @@ public class ServicoTesteEstresse {
     private final List<Future<?>> tarefasEstresse;
 
     public ServicoTesteEstresse() {
-        this.coletorHardware = ServicoColetorHardware.obterInstancia();
+        this(ServicoColetorHardware.obterInstancia(), new ServicoAlerta());
+    }
+
+    public ServicoTesteEstresse(ServicoColetorHardware coletorHardware, ServicoAlerta servicoAlerta) {
+        this.coletorHardware = coletorHardware;
+        this.servicoAlerta = servicoAlerta;
         this.emExecucao = new AtomicBoolean(false);
         this.memoriaRetida = Collections.synchronizedList(new ArrayList<>());
         this.tarefasEstresse = new ArrayList<>();
+    }
+
+    public ServicoAlerta obterServicoAlerta() {
+        return this.servicoAlerta;
     }
 
     public boolean estaEmExecucao() {
@@ -56,7 +67,8 @@ public class ServicoTesteEstresse {
             NivelEstresse nivelEstresse,
             int duracaoSegundos,
             Consumer<Amostra> consumidorAmostra,
-            Consumer<Integer> consumidorProgresso
+            Consumer<Integer> consumidorProgresso,
+            Consumer<List<Alerta>> consumidorAlertas
     ) throws InterruptedException {
 
         if (this.emExecucao.get()) {
@@ -117,6 +129,11 @@ public class ServicoTesteEstresse {
             listaAmostras.add(amostraColetada);
             if (consumidorAmostra != null) {
                 consumidorAmostra.accept(amostraColetada);
+            }
+            // Verificar alertas
+            List<Alerta> alertas = this.servicoAlerta.verificar(amostraColetada);
+            if (!alertas.isEmpty() && consumidorAlertas != null) {
+                consumidorAlertas.accept(alertas);
             }
         }, 0, 500, TimeUnit.MILLISECONDS);
 
@@ -284,6 +301,9 @@ public class ServicoTesteEstresse {
             temperaturaCelsius = Double.NaN;
         }
 
+        double usoGpu = this.coletorHardware.obterUsoGpu();
+        double temperaturaGpu = this.coletorHardware.obterTemperaturaGpu();
+
         // Micro-benchmark de responsividade: mede tempo de 200k iteracoes sin/cos
         long inicioBenchmark = System.nanoTime();
         double acumuladorBenchmark = 0.0;
@@ -295,6 +315,7 @@ public class ServicoTesteEstresse {
         }
         double tempoRespostaMs = (System.nanoTime() - inicioBenchmark) / 1000000.0;
 
-        return new Amostra(System.currentTimeMillis(), percentualCpu, percentualMemoria, frequenciaHz, temperaturaCelsius, tempoRespostaMs);
+        return new Amostra(System.currentTimeMillis(), percentualCpu, percentualMemoria,
+                frequenciaHz, temperaturaCelsius, tempoRespostaMs, usoGpu, temperaturaGpu);
     }
 }

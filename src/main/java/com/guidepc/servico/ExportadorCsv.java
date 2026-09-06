@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Gera conteudo CSV a partir dos resultados armazenados.
  * Extraido de ServicoComparacao para manter responsabilidade unica
- * e ser reutilizado tanto no console quanto no PDF.
+ * e ser reutilizado tanto na API quanto no PDF.
  */
 public final class ExportadorCsv {
 

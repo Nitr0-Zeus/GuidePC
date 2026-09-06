@@ -3,6 +3,18 @@ package com.guidepc.modelo;
 /**
  * Dados do processador mapeados do OSHI.
  * Frequencias em Hz; percentual em 0..100; temperatura em Celsius ou NaN.
+ *
+ * @param fabricante          fabricante do processador (ex.: "Intel", "AMD")
+ * @param modelo              modelo completo do processador
+ * @param microarquitetura    arquitetura do processador (ex.: "x86_64", "ARM")
+ * @param nucleosFisicos      quantidade de nucleos fisicos
+ * @param nucleosLogicos      quantidade de nucleos logicos (com hyper-threading)
+ * @param pacotesFisicos      numero de pacotes (sockets) fisicos
+ * @param frequenciaBaseHz    frequencia base em Hertz
+ * @param frequenciaMaximaHz  frequencia maxima (turbo/boost) em Hertz
+ * @param frequenciasAtuaisHz array com as frequencias atuais de cada nucleo/logico em Hz
+ * @param percentualUso       uso total do CPU em percentual (0.0 a 100.0)
+ * @param temperaturaCelsius  temperatura em graus Celsius ou Double.NaN se indisponivel
  */
 public record InformacoesProcessador(
         String fabricante,

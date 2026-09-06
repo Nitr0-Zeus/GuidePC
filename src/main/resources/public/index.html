@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuidePC v3.0 — Monitoramento de Hardware</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">■</span>
+            <span class="brand-text">GuidePC <span class="version">v3.0</span></span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+            <a href="#" class="nav-link" data-page="testes">Testes</a>
+            <a href="#" class="nav-link" data-page="historico">Histórico</a>
+            <a href="#" class="nav-link" data-page="config">Config</a>
+        </div>
+        <div class="nav-status">
+            <span class="status-dot" id="wsStatus"></span>
+            <span class="status-text" id="wsStatusText">Conectando...</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Dashboard -->
+        <section id="page-dashboard" class="page active">
+            <div class="cards-grid">
+                <div class="card card-metric">
+                    <div class="card-header">CPU</div>
+                    <div class="card-value" id="cpuValue">--</div>
+                    <div class="card-bar"><div class="bar-fill" id="cpuBar"></div></div>
+                    <div class="card-sub" id="cpuSub">Carregando...</div>
+                </div>
+                <div class="card card-metric">
+                    <div class="card-header">RAM</div>
+                    <div class="card-value" id="ramValue">--</div>
+                    <div class="card-bar"><div class="bar-fill" id="ramBar"></div></div>
+                    <div class="card-sub" id="ramSub">Carregando...</div>
+                </div>
+                <div class="card card-metric">
+                    <div class="card-header">Temp CPU</div>
+                    <div class="card-value" id="tempValue">--</div>
+                    <div class="card-bar"><div class="bar-fill temp" id="tempBar"></div></div>
+                    <div class="card-sub" id="tempSub">Sensor</div>
+                </div>
+                <div class="card card-metric">
+                    <div class="card-header">GPU</div>
+                    <div class="card-value" id="gpuValue">--</div>
+                    <div class="card-bar"><div class="bar-fill gpu" id="gpuBar"></div></div>
+                    <div class="card-sub" id="gpuSub">Verificando...</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card card-chart">
+                    <div class="card-header">CPU ao longo do tempo</div>
+                    <canvas id="chartCpu"></canvas>
+                </div>
+                <div class="card card-chart">
+                    <div class="card-header">RAM ao longo do tempo</div>
+                    <canvas id="chartRam"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Últimos Testes</div>
+                <div id="ultimosTestes" class="table-container">Carregando...</div>
+            </div>
+        </section>
+
+        <!-- Testes -->
+        <section id="page-testes" class="page">
+            <div class="tabs">
+                <button class="tab active" data-tab="estresse">Estresse (CPU/RAM)</button>
+                <button class="tab" data-tab="disco">Disco</button>
+            </div>
+
+            <div id="tab-estresse" class="tab-content active">
+                <div class="card">
+                    <h3>Configurar Teste de Estresse</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nível</label>
+                            <select id="nivelEstresse">
+                                <option value="NORMAL">Normal (baseline)</option>
+                                <option value="BAIXO" selected>Baixo (50% núcleos)</option>
+                                <option value="ALTO">Alto (100% + RAM)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duração (segundos)</label>
+                            <input type="number" id="duracaoEstresse" value="30" min="5" max="600">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnIniciarEstresse">Iniciar Teste</button>
+                </div>
+            </div>
+
+            <div id="tab-disco" class="tab-content">
+                <div class="card">
+                    <h3>Configurar Teste de Disco</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="tipoDisco">
+                                <option value="LEITURA_SEQUENCIAL">Leitura Sequencial</option>
+                                <option value="ESCRITA_SEQUENCIAL">Escrita Sequencial</option>
+                                <option value="LEITURA_ALEATORIA">Leitura Aleatória</option>
+                                <option value="ESCRITA_ALEATORIA">Escrita Aleatória</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duração (segundos)</label>
+                            <input type="number" id="duracaoDisco" value="20" min="5" max="120">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btnIniciarDisco">Iniciar Teste</button>
+                </div>
+            </div>
+
+            <!-- Área de resultado do teste -->
+            <div class="card" id="testeProgresso" style="display:none;">
+                <div class="card-header">Teste em Execução</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0%</div>
+                <div class="teste-metrics" id="testeMetrics"></div>
+                <button class="btn btn-danger" id="btnParar">Parar Teste</button>
+            </div>
+
+            <div class="card" id="testeResultado" style="display:none;">
+                <div class="card-header">Resultado do Teste</div>
+                <div id="resultadoConteudo"></div>
+            </div>
+        </section>
+
+        <!-- Histórico -->
+        <section id="page-historico" class="page">
+            <div class="card">
+                <div class="card-header">Histórico de Testes</div>
+                <div class="filters">
+                    <select id="filtroTipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="ESTRESSE">Estresse</option>
+                        <option value="DISCO">Disco</option>
+                    </select>
+                    <select id="filtroNivel">
+                        <option value="">Todos os níveis</option>
+                        <option value="NORMAL">Normal</option>
+                        <option value="BAIXO">Baixo</option>
+                        <option value="ALTO">Alto</option>
+                    </select>
+                    <button class="btn btn-secondary" id="btnFiltrar">Filtrar</button>
+                </div>
+                <div id="tabelaHistorico" class="table-container">Carregando...</div>
+                <div class="pagination" id="paginacao"></div>
+            </div>
+        </section>
+
+        <!-- Config -->
+        <section id="page-config" class="page">
+            <div class="card">
+                <div class="card-header">Configurações de Alerta</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="alertaHabilitado" checked>
+                            Habilitar alertas
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Limite CPU (%)</label>
+                        <input type="range" id="limiteCpu" min="10" max="100" value="90">
+                        <span class="range-value" id="limiteCpuValor">90%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Limite Temperatura (°C)</label>
+                        <input type="range" id="limiteTemp" min="30" max="110" value="85">
+                        <span class="range-value" id="limiteTempValor">85°C</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Limite Memória (%)</label>
+                        <input type="range" id="limiteRam" min="10" max="100" value="90">
+                        <span class="range-value" id="limiteRamValor">90%</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btnSalvarAlertas">Salvar Configurações</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Exportar Dados</div>
+                <div class="export-buttons">
+                    <button class="btn btn-secondary" id="btnExportCsv">Baixar CSV</button>
+                    <button class="btn btn-secondary" id="btnExportPdf">Baixar PDF</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Sobre</div>
+                <p><strong>GuidePC v3.0</strong> — Sistema de Monitoramento de Hardware</p>
+                <p>Servidor web local com SQLite, WebSocket e API REST.</p>
+                <p>Tecnologias: Java 21, Javalin 7.1, OSHI 6.6.4, Chart.js 4.x</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Alertas flutuantes -->
+    <div id="alertasContainer" class="alertas-container"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

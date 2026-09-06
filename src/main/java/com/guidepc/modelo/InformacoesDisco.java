@@ -7,6 +7,18 @@ import java.util.Optional;
 /**
  * Dados de um disco fisico mapeados do OSHI.
  * O tipo (HDD/SSD/NVMe) e inferido pelo nome do modelo, pois o OSHI nao expoe o tipo diretamente.
+ *
+ * @param nome                nome do disco (ex.: "/dev/sda", "C:")
+ * @param modelo              modelo do fabricante
+ * @param serial              numero de serie do disco
+ * @param tamanhoBytes        capacidade total em bytes
+ * @param leituras            numero total de operacoes de leitura desde inicializacao
+ * @param escritas            numero total de operacoes de escrita desde inicializacao
+ * @param bytesLidos          total de bytes lidos desde inicializacao
+ * @param bytesEscritos       total de bytes escritos desde inicializacao
+ * @param tempoTransferenciaMs tempo medio de transferencia em milissegundos
+ * @param pontosMontagem      lista de pontos de montagem (ex.: ["/", "/home"])
+ * @param tipoInferido        tipo inferido: "HDD", "SSD", "NVMe SSD" ou "Desconhecido"
  */
 public record InformacoesDisco(
         String nome,

@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Formatacao de valores para exibicao em console no padrao pt-BR.
+ * Formatacao de valores para exibicao no padrao pt-BR.
  * Retorna "Nao disponivel" quando o valor e invalido (NaN ou 0 quando aplicavel).
  */
 public final class Formatador {

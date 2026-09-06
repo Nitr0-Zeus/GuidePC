@@ -9,6 +9,8 @@ package com.guidepc.modelo;
  * @param frequenciaCpuHz      frequencia maxima observada entre os nucleos (Hz)
  * @param temperaturaCelsius   temperatura da CPU se houver sensor; NaN caso indisponivel
  * @param tempoRespostaMs      duracao do micro-benchmark interno (sin/cos), usado como proxy de responsividade
+ * @param usoGpuPercentual     uso da GPU no instante (0 a 100); NaN caso indisponivel
+ * @param temperaturaGpuCelsius temperatura da GPU; NaN caso indisponivel
  */
 public record Amostra(
         long instanteMillis,
@@ -16,6 +18,18 @@ public record Amostra(
         double usoMemoriaPercentual,
         long frequenciaCpuHz,
         double temperaturaCelsius,
-        double tempoRespostaMs
+        double tempoRespostaMs,
+        double usoGpuPercentual,
+        double temperaturaGpuCelsius
 ) {
+
+    /**
+     * Construtor compativel com versao anterior (sem GPU).
+     */
+    public Amostra(long instanteMillis, double cargaCpuPercentual, double usoMemoriaPercentual,
+                   long frequenciaCpuHz, double temperaturaCelsius, double tempoRespostaMs) {
+        this(instanteMillis, cargaCpuPercentual, usoMemoriaPercentual,
+                frequenciaCpuHz, temperaturaCelsius, tempoRespostaMs,
+                Double.NaN, Double.NaN);
+    }
 }

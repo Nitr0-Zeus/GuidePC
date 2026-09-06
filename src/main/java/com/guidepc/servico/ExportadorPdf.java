@@ -9,6 +9,7 @@ import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -18,6 +19,10 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -26,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
 /**
  * Gera relatório PDF local — visual GuidePC, sem cara de IA.
@@ -33,7 +39,7 @@ import java.util.Map;
  */
 public final class ExportadorPdf {
 
-    // Paleta GuidePC — espelha o console color 0C (vermelho sobre preto)
+    // Paleta GuidePC — vermelho sobre preto
     private static final Color VERMELHO_GUIDE = new Color(139, 0, 0);
     private static final Color PRETO_SUAVE = new Color(26, 26, 26);
     private static final Color CINZA_BORDA = new Color(220, 220, 220);
@@ -82,7 +88,7 @@ public final class ExportadorPdf {
             celEsq.setPaddingTop(6);
             celEsq.setPaddingBottom(6);
             celEsq.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            PdfPCell celDir = new PdfPCell(new Phrase("Relatorio de Hardware  •  v2.1", FONTE_FAIXA_SUB));
+            PdfPCell celDir = new PdfPCell(new Phrase("Relatorio de Hardware  •  v3.0", FONTE_FAIXA_SUB));
             celDir.setBackgroundColor(VERMELHO_GUIDE);
             celDir.setBorder(Rectangle.NO_BORDER);
             celDir.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -92,7 +98,7 @@ public final class ExportadorPdf {
             faixa.addCell(celDir);
             documento.add(faixa);
 
-            // Marca d'água ASCII sutil — mesma arte do console, 4pt rosado claro
+            // Marca d'água ASCII sutil — 4pt rosado claro
             String[] marca = {
                     "  ________      .__    .___    ___________________  ",
                     " /  _____/ __ __|__| __| _/____\\______   \\_   ___ \\ ",
@@ -238,6 +244,18 @@ public final class ExportadorPdf {
                 projecao.setSpacingBefore(2);
                 documento.add(projecao);
                 documento.add(espaco(6));
+
+                // ----- GRAFICO DE BARRAS COMPARATIVO -----
+                Paragraph graficoTitulo = new Paragraph("Grafico Comparativo - Uso de CPU", FONTE_SUBTITULO);
+                documento.add(graficoTitulo);
+                documento.add(espaco(4));
+                Image graficoBarras = gerarGraficoBarras(mapaResultados);
+                if (graficoBarras != null) {
+                    graficoBarras.setAlignment(Element.ALIGN_CENTER);
+                    graficoBarras.scalePercent(90);
+                    documento.add(graficoBarras);
+                    documento.add(espaco(8));
+                }
             }
 
             // ----- 3. RESUMO EXPLICATIVO (meio a meio, para leigo) -----
@@ -271,7 +289,7 @@ public final class ExportadorPdf {
             PdfPTable rodape = new PdfPTable(2);
             rodape.setWidthPercentage(100);
             rodape.setWidths(new float[]{70, 30});
-            PdfPCell rEsq = new PdfPCell(new Phrase(String.format("GuidePC v2.1  •  %s", caminhoDestino.getFileName()), FONTE_RODAPE));
+            PdfPCell rEsq = new PdfPCell(new Phrase(String.format("GuidePC v3.0  •  %s", caminhoDestino.getFileName()), FONTE_RODAPE));
             rEsq.setBorder(Rectangle.NO_BORDER);
             rEsq.setHorizontalAlignment(Element.ALIGN_LEFT);
             PdfPCell rDir = new PdfPCell(new Phrase("Pagina 1  •  Uso local", FONTE_RODAPE));
@@ -441,5 +459,109 @@ public final class ExportadorPdf {
         if (primeiro == null || ultimo == null) return "N/D";
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM HH:mm:ss").withZone(java.time.ZoneId.systemDefault());
         return fmt.format(primeiro.obterInstanteInicio()) + " → " + fmt.format(ultimo.obterInstanteFim());
+    }
+
+    /**
+     * Gera grafico de barras comparando o uso medio de CPU por nivel de estresse.
+     */
+    private static Image gerarGraficoBarras(Map<NivelEstresse, ResultadoTesteEstresse> mapa) {
+        try {
+            int largura = 500;
+            int altura = 200;
+            BufferedImage imagem = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = imagem.createGraphics();
+
+            // Fundo branco
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(0, 0, largura, altura);
+
+            // Margens
+            int margemEsq = 80;
+            int margemDir = 20;
+            int margemCima = 30;
+            int margemBaixo = 50;
+            int larguraGrafico = largura - margemEsq - margemDir;
+            int alturaGrafico = altura - margemCima - margemBaixo;
+
+            // Titulo
+            g2d.setColor(PRETO_SUAVE);
+            g2d.setFont(new java.awt.Font("Helvetica", java.awt.Font.BOLD, 10));
+            g2d.drawString("Uso Medio de CPU por Nivel", margemEsq, 15);
+
+            // Eixo Y (0% a 100%)
+            g2d.setColor(Color.GRAY);
+            g2d.setFont(new java.awt.Font("Helvetica", java.awt.Font.PLAIN, 8));
+            for (int i = 0; i <= 100; i += 20) {
+                int y = margemCima + alturaGrafico - (i * alturaGrafico / 100);
+                g2d.drawLine(margemEsq - 5, y, margemEsq, y);
+                g2d.drawString(i + "%", margemEsq - 30, y + 3);
+                // Linha de grade
+                g2d.setColor(new Color(230, 230, 230));
+                g2d.drawLine(margemEsq, y, margemEsq + larguraGrafico, y);
+                g2d.setColor(Color.GRAY);
+            }
+
+            // Eixo X
+            g2d.drawLine(margemEsq, margemCima + alturaGrafico, margemEsq + larguraGrafico, margemCima + alturaGrafico);
+
+            // Cores para cada nivel
+            Color[] cores = {new Color(100, 180, 100), new Color(255, 180, 50), new Color(200, 60, 60)};
+            NivelEstresse[] niveis = NivelEstresse.values();
+            int totalNiveisComDados = 0;
+            for (NivelEstresse n : niveis) {
+                if (mapa.containsKey(n)) totalNiveisComDados++;
+            }
+
+            if (totalNiveisComDados == 0) {
+                g2d.dispose();
+                return null;
+            }
+
+            int larguraBarra = Math.min(80, larguraGrafico / (totalNiveisComDados * 2));
+            int espacamento = larguraGrafico / (totalNiveisComDados + 1);
+            int indiceBarra = 0;
+
+            for (int i = 0; i < niveis.length; i++) {
+                ResultadoTesteEstresse r = mapa.get(niveis[i]);
+                if (r == null) continue;
+
+                double mediaCpu = r.obterMediaCpu();
+                int alturaBarra = (int) (mediaCpu * alturaGrafico / 100);
+                int x = margemEsq + espacamento * (indiceBarra + 1) - larguraBarra / 2;
+                int y = margemCima + alturaGrafico - alturaBarra;
+
+                // Barra
+                g2d.setColor(cores[i]);
+                g2d.fill(new Rectangle2D.Double(x, y, larguraBarra, alturaBarra));
+
+                // Borda da barra
+                g2d.setColor(cores[i].darker());
+                g2d.draw(new Rectangle2D.Double(x, y, larguraBarra, alturaBarra));
+
+                // Valor acima da barra
+                g2d.setColor(PRETO_SUAVE);
+                g2d.setFont(new java.awt.Font("Helvetica", java.awt.Font.BOLD, 9));
+                String valor = String.format(Locale.US, "%.1f%%", mediaCpu);
+                int larguraTexto = g2d.getFontMetrics().stringWidth(valor);
+                g2d.drawString(valor, x + larguraBarra / 2 - larguraTexto / 2, y - 5);
+
+                // Label abaixo
+                g2d.setFont(new java.awt.Font("Helvetica", java.awt.Font.PLAIN, 8));
+                String label = niveis[i].name();
+                int larguraLabel = g2d.getFontMetrics().stringWidth(label);
+                g2d.drawString(label, x + larguraBarra / 2 - larguraLabel / 2, margemCima + alturaGrafico + 15);
+
+                indiceBarra++;
+            }
+
+            g2d.dispose();
+
+            // Converter BufferedImage para Image do iText
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(imagem, "png", baos);
+            return Image.getInstance(baos.toByteArray());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -31,6 +31,7 @@ ehthumbs.db
 Desktop.ini
 
 # App
+guidepc.db
 guidepc_relatorio.csv
 relatorios/
 *.pdf

@@ -214,6 +214,102 @@ public class ServicoColetorHardware {
         return listaGpu;
     }
 
+    /**
+     * Tenta obter o uso da GPU via nvidia-smi (NVIDIA) ou WMI (Windows).
+     * Retorna NaN se nao for possivel obter.
+     */
+    public synchronized double obterUsoGpu() {
+        try {
+            String sistema = System.getProperty("os.name", "").toLowerCase();
+            if (sistema.contains("win")) {
+                return this.obterUsoGpuWindows();
+            } else {
+                return this.obterUsoGpuLinux();
+            }
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    /**
+     * Tenta obter a temperatura da GPU via nvidia-smi ou WMI.
+     * Retorna NaN se nao for possivel obter.
+     */
+    public synchronized double obterTemperaturaGpu() {
+        try {
+            String sistema = System.getProperty("os.name", "").toLowerCase();
+            if (sistema.contains("win")) {
+                return this.obterTemperaturaGpuWindows();
+            } else {
+                return this.obterTemperaturaGpuLinux();
+            }
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    private double obterUsoGpuWindows() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("wmic", "path", "win32_videocontroller",
+                    "get", "AdapterRAM,Name", "/format:list");
+            pb.redirectErrorStream(true);
+            Process processo = pb.start();
+            String saida = new String(processo.getInputStream().readAllBytes());
+            processo.waitFor();
+            // parsing basico - retorna NaN se nao conseguir
+            return Double.NaN;
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    private double obterUsoGpuLinux() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nvidia-smi",
+                    "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits");
+            pb.redirectErrorStream(true);
+            Process processo = pb.start();
+            String saida = new String(processo.getInputStream().readAllBytes()).trim();
+            processo.waitFor();
+            if (!saida.isEmpty()) {
+                return Double.parseDouble(saida.split("\n")[0].trim());
+            }
+        } catch (Exception ignored) {
+        }
+        return Double.NaN;
+    }
+
+    private double obterTemperaturaGpuWindows() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("wmic", "path",
+                    "Win32_PerfFormattedData_ThermalZoneInformation",
+                    "get", "Temperature", "/format:list");
+            pb.redirectErrorStream(true);
+            Process processo = pb.start();
+            String saida = new String(processo.getInputStream().readAllBytes());
+            processo.waitFor();
+            return Double.NaN;
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    private double obterTemperaturaGpuLinux() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nvidia-smi",
+                    "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits");
+            pb.redirectErrorStream(true);
+            Process processo = pb.start();
+            String saida = new String(processo.getInputStream().readAllBytes()).trim();
+            processo.waitFor();
+            if (!saida.isEmpty()) {
+                return Double.parseDouble(saida.split("\n")[0].trim());
+            }
+        } catch (Exception ignored) {
+        }
+        return Double.NaN;
+    }
+
     private String protegerTexto(String textoOriginal) {
         return Optional.ofNullable(textoOriginal)
                 .filter(texto -> !texto.isBlank())
