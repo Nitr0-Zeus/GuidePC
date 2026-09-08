@@ -49,9 +49,19 @@ public final class TesteController {
      */
     private static void iniciarEstresse(Context ctx) {
         try {
-            ObjectNode body = MAPPER.readTree(ctx.body()).deepCopy();
+            String bodyStr = ctx.body();
+            if (bodyStr == null || bodyStr.isBlank()) {
+                ctx.status(400).json(Map.of("erro", "Corpo da requisicao invalido"));
+                return;
+            }
+            ObjectNode body = MAPPER.readTree(bodyStr).deepCopy();
             String nivel = body.path("nivel").asText("BAIXO");
             int duracao = body.path("duracao").asInt(30);
+
+            if (duracao < 5 || duracao > 600) {
+                ctx.status(400).json(Map.of("erro", "Duracao deve ser entre 5 e 600 segundos"));
+                return;
+            }
 
             GerenciadorTestes.obterInstancia().iniciarEstresse(nivel, duracao);
             ctx.json(Map.of("status", "iniciado", "tipo", "ESTRESSE"));
@@ -72,9 +82,19 @@ public final class TesteController {
      */
     private static void iniciarDisco(Context ctx) {
         try {
-            ObjectNode body = MAPPER.readTree(ctx.body()).deepCopy();
+            String bodyStr = ctx.body();
+            if (bodyStr == null || bodyStr.isBlank()) {
+                ctx.status(400).json(Map.of("erro", "Corpo da requisicao invalido"));
+                return;
+            }
+            ObjectNode body = MAPPER.readTree(bodyStr).deepCopy();
             String tipo = body.path("tipo").asText("ESCRITA_SEQUENCIAL");
             int duracao = body.path("duracao").asInt(30);
+
+            if (duracao < 5 || duracao > 120) {
+                ctx.status(400).json(Map.of("erro", "Duracao deve ser entre 5 e 120 segundos"));
+                return;
+            }
 
             GerenciadorTestes.obterInstancia().iniciarDisco(tipo, duracao);
             ctx.json(Map.of("status", "iniciado", "tipo", "DISCO"));

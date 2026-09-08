@@ -138,7 +138,7 @@ public class ServicoTesteEstresse {
         }, 0, 500, TimeUnit.MILLISECONDS);
 
         long prazoFinalMillis = System.currentTimeMillis() + duracaoSegundos * 1000L;
-        for (int segundosDecorridos = 0; segundosDecorridos <= duracaoSegundos; segundosDecorridos++) {
+        for (int segundosDecorridos = 0; segundosDecorridos < duracaoSegundos; segundosDecorridos++) {
             if (!this.emExecucao.get()) {
                 break;
             }
@@ -163,7 +163,6 @@ public class ServicoTesteEstresse {
                         this.memoriaRetida.remove(this.memoriaRetida.size() - 1);
                     }
                 }
-                System.gc();
             }
 
             Thread.sleep(1000);
@@ -211,7 +210,6 @@ public class ServicoTesteEstresse {
         synchronized (this.memoriaRetida) {
             this.memoriaRetida.clear();
         }
-        System.gc();
     }
 
     /**
@@ -265,7 +263,6 @@ public class ServicoTesteEstresse {
                 synchronized (this.memoriaRetida) {
                     this.memoriaRetida.clear();
                 }
-                System.gc();
                 this.emExecucao.set(false);
             } catch (InterruptedException excecaoInterrupcao) {
                 Thread.currentThread().interrupt();

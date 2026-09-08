@@ -30,6 +30,7 @@ public final class HardwareController {
         routes.get("/api/hardware/cpu", HardwareController::obterCpu);
         routes.get("/api/hardware/memoria", HardwareController::obterMemoria);
         routes.get("/api/hardware/gpu", HardwareController::obterGpu);
+        routes.get("/api/hardware/disco-espaco", HardwareController::obterDiscoEspaco);
     }
 
     /**
@@ -45,23 +46,26 @@ public final class HardwareController {
             InformacoesHardware hw = coletor.coletarTudo();
 
             Map<String, Object> resultado = new LinkedHashMap<>();
-            resultado.put("processador", new LinkedHashMap<>() {{
-                put("fabricante", hw.processador().fabricante());
-                put("modelo", hw.processador().modelo());
-                put("microarquitetura", hw.processador().microarquitetura());
-                put("nucleosFisicos", hw.processador().nucleosFisicos());
-                put("nucleosLogicos", hw.processador().nucleosLogicos());
-                put("frequenciaBaseHz", hw.processador().frequenciaBaseHz());
-                put("frequenciaMaximaHz", hw.processador().frequenciaMaximaHz());
-                put("percentualUso", hw.processador().percentualUso());
-                put("temperaturaCelsius", hw.processador().temperaturaCelsius());
-            }});
-            resultado.put("memoria", new LinkedHashMap<>() {{
-                put("totalBytes", hw.memoria().totalBytes());
-                put("disponivelBytes", hw.memoria().disponivelBytes());
-                put("emUsoBytes", hw.memoria().emUsoBytes());
-                put("percentualUso", hw.memoria().percentualUso());
-            }});
+
+            Map<String, Object> processador = new LinkedHashMap<>();
+            processador.put("fabricante", hw.processador().fabricante());
+            processador.put("modelo", hw.processador().modelo());
+            processador.put("microarquitetura", hw.processador().microarquitetura());
+            processador.put("nucleosFisicos", hw.processador().nucleosFisicos());
+            processador.put("nucleosLogicos", hw.processador().nucleosLogicos());
+            processador.put("frequenciaBaseHz", hw.processador().frequenciaBaseHz());
+            processador.put("frequenciaMaximaHz", hw.processador().frequenciaMaximaHz());
+            processador.put("percentualUso", hw.processador().percentualUso());
+            processador.put("temperaturaCelsius", hw.processador().temperaturaCelsius());
+            resultado.put("processador", processador);
+
+            Map<String, Object> memoria = new LinkedHashMap<>();
+            memoria.put("totalBytes", hw.memoria().totalBytes());
+            memoria.put("disponivelBytes", hw.memoria().disponivelBytes());
+            memoria.put("emUsoBytes", hw.memoria().emUsoBytes());
+            memoria.put("percentualUso", hw.memoria().percentualUso());
+            resultado.put("memoria", memoria);
+
             resultado.put("discos", hw.discos().stream().map(d -> {
                 Map<String, Object> disco = new LinkedHashMap<>();
                 disco.put("nome", d.nome());
@@ -71,17 +75,20 @@ public final class HardwareController {
                 disco.put("pontosMontagem", d.pontosMontagem());
                 return disco;
             }).toList());
-            resultado.put("placaMae", new LinkedHashMap<>() {{
-                put("fabricante", hw.placaMae().fabricante());
-                put("modelo", hw.placaMae().modelo());
-                put("versaoBios", hw.placaMae().versaoBios());
-            }});
-            resultado.put("sistemaOperacional", new LinkedHashMap<>() {{
-                put("familia", hw.sistemaOperacional().familia());
-                put("versao", hw.sistemaOperacional().versao());
-                put("arquitetura", hw.sistemaOperacional().arquitetura());
-                put("tempoAtividadeSegundos", hw.sistemaOperacional().tempoAtividadeSegundos());
-            }});
+
+            Map<String, Object> placaMae = new LinkedHashMap<>();
+            placaMae.put("fabricante", hw.placaMae().fabricante());
+            placaMae.put("modelo", hw.placaMae().modelo());
+            placaMae.put("versaoBios", hw.placaMae().versaoBios());
+            resultado.put("placaMae", placaMae);
+
+            Map<String, Object> so = new LinkedHashMap<>();
+            so.put("familia", hw.sistemaOperacional().familia());
+            so.put("versao", hw.sistemaOperacional().versao());
+            so.put("arquitetura", hw.sistemaOperacional().arquitetura());
+            so.put("tempoAtividadeSegundos", hw.sistemaOperacional().tempoAtividadeSegundos());
+            resultado.put("sistemaOperacional", so);
+
             resultado.put("gpus", hw.nomesGpu());
 
             ctx.json(resultado);
@@ -148,6 +155,16 @@ public final class HardwareController {
             resultado.put("usoPercentual", coletor.obterUsoGpu());
             resultado.put("temperaturaCelsius", coletor.obterTemperaturaGpu());
             ctx.json(resultado);
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    private static void obterDiscoEspaco(Context ctx) {
+        try {
+            ServicoColetorHardware coletor = ServicoColetorHardware.obterInstancia();
+            var particoes = coletor.obterEspacoDisco();
+            ctx.json(particoes);
         } catch (Exception e) {
             ctx.status(500).json(Map.of("erro", e.getMessage()));
         }

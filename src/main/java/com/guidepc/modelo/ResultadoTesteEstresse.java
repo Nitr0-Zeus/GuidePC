@@ -58,11 +58,11 @@ public class ResultadoTesteEstresse {
         double somaMemoria = 0.0;
         double somaTempoResposta = 0.0;
 
-        this.maximoCpu = Double.MIN_VALUE;
+        this.maximoCpu = -Double.MAX_VALUE;
         this.minimoCpu = Double.MAX_VALUE;
-        this.maximoMemoria = Double.MIN_VALUE;
+        this.maximoMemoria = -Double.MAX_VALUE;
         this.minimoMemoria = Double.MAX_VALUE;
-        this.maximoTempoRespostaMs = Double.MIN_VALUE;
+        this.maximoTempoRespostaMs = -Double.MAX_VALUE;
 
         for (Amostra amostraAtual : this.amostras) {
             double cargaCpuAtual = amostraAtual.cargaCpuPercentual();

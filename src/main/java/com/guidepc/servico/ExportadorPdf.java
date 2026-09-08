@@ -4,6 +4,7 @@ import com.guidepc.modelo.InformacoesHardware;
 import com.guidepc.modelo.NivelEstresse;
 import com.guidepc.modelo.ResultadoTesteEstresse;
 import com.guidepc.utilitario.Formatador;
+import com.guidepc.utilitario.VersaoApp;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -44,7 +45,6 @@ public final class ExportadorPdf {
     private static final Color PRETO_SUAVE = new Color(26, 26, 26);
     private static final Color CINZA_BORDA = new Color(220, 220, 220);
     private static final Color CINZA_FUNDO = new Color(248, 248, 248);
-    private static final Color AZUL_ANTIGO = new Color(45, 85, 140); // removido, mantido só se precisar
 
     private static final DateTimeFormatter FORMATO_BR = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final Font FONTE_FAIXA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
@@ -72,8 +72,7 @@ public final class ExportadorPdf {
         String janelaColeta = formatarJanelaColeta(mapaResultados);
 
         Document documento = new Document(PageSize.A4, 36, 36, 28, 32);
-        FileOutputStream saida = new FileOutputStream(caminhoDestino.toFile());
-        try {
+        try (FileOutputStream saida = new FileOutputStream(caminhoDestino.toFile())) {
             PdfWriter.getInstance(documento, saida);
             documento.open();
 
@@ -88,7 +87,7 @@ public final class ExportadorPdf {
             celEsq.setPaddingTop(6);
             celEsq.setPaddingBottom(6);
             celEsq.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            PdfPCell celDir = new PdfPCell(new Phrase("Relatorio de Hardware  •  v3.0", FONTE_FAIXA_SUB));
+            PdfPCell celDir = new PdfPCell(new Phrase("Relatorio de Hardware  •  v" + VersaoApp.NUMERO, FONTE_FAIXA_SUB));
             celDir.setBackgroundColor(VERMELHO_GUIDE);
             celDir.setBorder(Rectangle.NO_BORDER);
             celDir.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -289,7 +288,7 @@ public final class ExportadorPdf {
             PdfPTable rodape = new PdfPTable(2);
             rodape.setWidthPercentage(100);
             rodape.setWidths(new float[]{70, 30});
-            PdfPCell rEsq = new PdfPCell(new Phrase(String.format("GuidePC v3.0  •  %s", caminhoDestino.getFileName()), FONTE_RODAPE));
+            PdfPCell rEsq = new PdfPCell(new Phrase(String.format("GuidePC v%s  •  %s", VersaoApp.NUMERO, caminhoDestino.getFileName()), FONTE_RODAPE));
             rEsq.setBorder(Rectangle.NO_BORDER);
             rEsq.setHorizontalAlignment(Element.ALIGN_LEFT);
             PdfPCell rDir = new PdfPCell(new Phrase("Pagina 1  •  Uso local", FONTE_RODAPE));
@@ -302,8 +301,6 @@ public final class ExportadorPdf {
         } finally {
             if (documento.isOpen()) {
                 documento.close();
-            } else {
-                saida.close();
             }
         }
     }

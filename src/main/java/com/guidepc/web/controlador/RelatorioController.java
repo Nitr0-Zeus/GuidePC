@@ -48,8 +48,9 @@ public final class RelatorioController {
             csv.append("ID,Tipo,Nivel,Disco,Duracao(s),Inicio,Fim,CPU Media,CPU Max,Selo,Throughput(MB/s)\n");
             for (Object[] t : testes) {
                 csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-                    t[0], t[1], nvl(t[2]), nvl(t[3]), t[4], nvl(t[5]), nvl(t[6]),
-                    t[7], t[8], nvl(t[9]), t[10]));
+                    t[0], escapeCsv(t[1]), escapeCsv(t[2]), escapeCsv(t[3]), t[4],
+                    escapeCsv(t[5]), escapeCsv(t[6]),
+                    t[7], t[8], escapeCsv(t[9]), t[10]));
             }
 
             Path dir = Path.of("relatorios");
@@ -83,26 +84,29 @@ public final class RelatorioController {
             }
 
             // Gerar PDF simples usando OpenPDF
-            com.lowagie.text.Document doc = new com.lowagie.text.Document();
             Path dir = Path.of("relatorios");
             Files.createDirectories(dir);
             Path arquivo = dir.resolve("guidepc_relatorio.pdf");
-            com.lowagie.text.pdf.PdfWriter.getInstance(doc, Files.newOutputStream(arquivo));
-            doc.open();
 
-            doc.add(new com.lowagie.text.Paragraph("GuidePC - Relatório de Testes"));
-            doc.add(new com.lowagie.text.Paragraph(" "));
-            doc.add(new com.lowagie.text.Paragraph("Total de testes: " + testes.size()));
-            doc.add(new com.lowagie.text.Paragraph(" "));
+            com.lowagie.text.Document doc = new com.lowagie.text.Document();
+            try (var outputStream = Files.newOutputStream(arquivo)) {
+                com.lowagie.text.pdf.PdfWriter.getInstance(doc, outputStream);
+                doc.open();
 
-            for (Object[] t : testes) {
-                doc.add(new com.lowagie.text.Paragraph(String.format(
-                    "ID: %s | Tipo: %s | Nível: %s | Duração: %ss | CPU Média: %s%% | Selo: %s",
-                    t[0], t[1], nvl(t[2]), t[4], t[7], nvl(t[9])
-                )));
+                doc.add(new com.lowagie.text.Paragraph("GuidePC - Relatório de Testes"));
+                doc.add(new com.lowagie.text.Paragraph(" "));
+                doc.add(new com.lowagie.text.Paragraph("Total de testes: " + testes.size()));
+                doc.add(new com.lowagie.text.Paragraph(" "));
+
+                for (Object[] t : testes) {
+                    doc.add(new com.lowagie.text.Paragraph(String.format(
+                        "ID: %s | Tipo: %s | Nível: %s | Duração: %ss | CPU Média: %s%% | Selo: %s",
+                        t[0], t[1], nvl(t[2]), t[4], t[7], nvl(t[9])
+                    )));
+                }
+
+                doc.close();
             }
-
-            doc.close();
 
             ctx.header("Content-Disposition", "attachment; filename=guidepc_relatorio.pdf");
             ctx.contentType("application/pdf");
@@ -117,5 +121,23 @@ public final class RelatorioController {
      */
     private static String nvl(Object o) {
         return o != null ? String.valueOf(o) : "";
+    }
+
+    /**
+     * Escapa valores para CSV, prevenindo CSV injection e quebras de formato.
+     */
+    private static String escapeCsv(Object valor) {
+        if (valor == null) return "";
+        String str = String.valueOf(valor);
+        if (str.isEmpty()) return "";
+        // Previne CSV injection (valores iniciando com =, +, -, @)
+        if (str.charAt(0) == '=' || str.charAt(0) == '+' || str.charAt(0) == '-' || str.charAt(0) == '@') {
+            str = "'" + str;
+        }
+        // Escapa aspas duplas e envolve em aspas se contiver virgula ou quebra de linha
+        if (str.contains(",") || str.contains("\"") || str.contains("\n")) {
+            str = "\"" + str.replace("\"", "\"\"") + "\"";
+        }
+        return str;
     }
 }

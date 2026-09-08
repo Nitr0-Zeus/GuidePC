@@ -2,6 +2,7 @@ package com.guidepc;
 
 import com.guidepc.persistencia.ConexaoBanco;
 import com.guidepc.persistencia.MigracaoBanco;
+import com.guidepc.utilitario.VersaoApp;
 import com.guidepc.web.ServidorWeb;
 
 import java.awt.Desktop;
@@ -9,7 +10,7 @@ import java.net.InetAddress;
 import java.net.URI;
 
 /**
- * Ponto de entrada do GuidePC v3.0 — 100% Web Local.
+ * Ponto de entrada do GuidePC v4.0 — 100% Web Local.
  *
  * <p>Inicia o servidor Javalin na porta 7070 e abre o navegador automaticamente.
  * Todos os dados ficam em SQLite local (guidepc.db).</p>
@@ -42,7 +43,7 @@ public class GuidePCApplication {
         System.out.println("  ╚██████╗██║██║        ██║       ██████╔╝██║  ██║██████╔╝███████╗██║   ██║   ");
         System.out.println("   ╚═════╝╚═╝╚═╝        ╚═╝       ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝   ╚═╝   ");
         System.out.println();
-        System.out.println("  GuidePC v3.0 — Monitoramento de Hardware 100% Web");
+        System.out.println("  GuidePC v" + VersaoApp.NUMERO + " — Monitoramento de Hardware 100% Web");
         System.out.println("  ─────────────────────────────────────────────────────");
 
         // 1. Inicializar banco de dados SQLite (cria arquivo guidepc.db)
@@ -57,16 +58,19 @@ public class GuidePCApplication {
 
         // 3. Abrir navegador padrão do sistema automaticamente
         System.out.println("  [3/3] Abrindo navegador...");
-        // Monta a URL local e tenta abrir no navegador do sistema
         String url = "http://localhost:" + porta;
         try {
-            // Verifica se o ambiente suporta Desktop (GUI disponível)
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().browse(new URI(url));
             }
         } catch (Exception ignored) {
-            // Se falhar (ex: ambiente sem GUI), o usuário acessa manualmente
         }
+
+        // Shutdown hook para encerramento limpo
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("[GuidePC] Encerrando servidor...");
+            ServidorWeb.parar();
+        }, "GuidePC-Shutdown"));
 
         System.out.println();
         System.out.println("  ✓ GuidePC rodando em: " + url);

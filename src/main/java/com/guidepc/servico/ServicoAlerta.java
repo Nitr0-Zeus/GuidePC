@@ -7,6 +7,7 @@ import com.guidepc.modelo.ConfiguracaoAlerta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Servico de verificacao de alertas durante testes.
@@ -19,7 +20,7 @@ public class ServicoAlerta {
 
     public ServicoAlerta() {
         this.configuracao = new ConfiguracaoAlerta();
-        this.alertasDisparados = new ArrayList<>();
+        this.alertasDisparados = new CopyOnWriteArrayList<>();
     }
 
     public ConfiguracaoAlerta obterConfiguracao() {

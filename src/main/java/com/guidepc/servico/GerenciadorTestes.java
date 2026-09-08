@@ -34,6 +34,15 @@ public final class GerenciadorTestes {
         this.servicoAlerta = ServicoMonitoramento.obterInstancia().obterServicoAlerta();
         this.servicoEstresse = new ServicoTesteEstresse(coletor, servicoAlerta);
         this.servicoDisco = new ServicoTesteDisco();
+        // Registra shutdown hook para encerrar o pool de threads
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            executor.shutdownNow();
+            try {
+                executor.awaitTermination(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "GuidePC-Shutdown"));
     }
 
     public static GerenciadorTestes obterInstancia() {

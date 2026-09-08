@@ -14,6 +14,7 @@ public final class ConexaoBanco {
     private static ConexaoBanco instancia;
     private static String caminhoBanco;
     private final String url;
+    private volatile boolean pragmasConfigurados = false;
 
     private ConexaoBanco(String caminho) {
         this.url = "jdbc:sqlite:" + caminho;
@@ -33,10 +34,13 @@ public final class ConexaoBanco {
 
     public Connection obterConexao() throws SQLException {
         Connection conn = DriverManager.getConnection(this.url + "?busy_timeout=5000");
-        try (var stmt = conn.createStatement()) {
-            stmt.execute("PRAGMA journal_mode=WAL");
-            stmt.execute("PRAGMA busy_timeout=5000");
-            stmt.execute("PRAGMA foreign_keys=ON");
+        if (!pragmasConfigurados) {
+            try (var stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA journal_mode=WAL");
+                stmt.execute("PRAGMA busy_timeout=5000");
+                stmt.execute("PRAGMA foreign_keys=ON");
+            }
+            pragmasConfigurados = true;
         }
         return conn;
     }

@@ -5,10 +5,10 @@ package com.guidepc.modelo;
  */
 public class ConfiguracaoAlerta {
 
-    private double limiteCpuPercentual;
-    private double limiteTemperaturaCelsius;
-    private double limiteMemoriaPercentual;
-    private boolean habilitado;
+    private volatile double limiteCpuPercentual;
+    private volatile double limiteTemperaturaCelsius;
+    private volatile double limiteMemoriaPercentual;
+    private volatile boolean habilitado;
 
     public ConfiguracaoAlerta() {
         this.limiteCpuPercentual = 90.0;

@@ -1,6 +1,8 @@
 package com.guidepc.servico;
 
+import com.guidepc.modelo.InformacoesBateria;
 import com.guidepc.modelo.InformacoesDisco;
+import com.guidepc.modelo.InformacoesDiscoParticao;
 import com.guidepc.modelo.InformacoesHardware;
 import com.guidepc.modelo.InformacoesMemoria;
 import com.guidepc.modelo.InformacoesPlacaMae;
@@ -17,11 +19,14 @@ import oshi.hardware.GraphicsCard;
 import oshi.hardware.HWDiskStore;
 import oshi.hardware.HWPartition;
 import oshi.hardware.HardwareAbstractionLayer;
+import oshi.hardware.PowerSource;
+import oshi.software.os.OSFileStore;
 import oshi.software.os.OperatingSystem;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Fachada para leitura de hardware via OSHI.
@@ -254,9 +259,26 @@ public class ServicoColetorHardware {
                     "get", "AdapterRAM,Name", "/format:list");
             pb.redirectErrorStream(true);
             Process processo = pb.start();
-            String saida = new String(processo.getInputStream().readAllBytes());
-            processo.waitFor();
-            // parsing basico - retorna NaN se nao conseguir
+            String saida;
+            try (var is = processo.getInputStream()) {
+                saida = new String(is.readAllBytes());
+            }
+            boolean concluido = processo.waitFor(5, TimeUnit.SECONDS);
+            if (!concluido) {
+                processo.destroyForcibly();
+                return Double.NaN;
+            }
+            // parsing basico do wmic: procura linha "AdapterRAM=XXXXX"
+            for (String linha : saida.split("\n")) {
+                String trim = linha.trim();
+                if (trim.startsWith("AdapterRAM=")) {
+                    String valor = trim.substring("AdapterRAM=".length()).trim();
+                    if (!valor.isEmpty()) {
+                        long bytes = Long.parseLong(valor);
+                        // AdapterRAM retorna em bytes, mas o campo nao e uso - retorna NaN (sem suporte nativo)
+                    }
+                }
+            }
             return Double.NaN;
         } catch (Exception e) {
             return Double.NaN;
@@ -269,8 +291,15 @@ public class ServicoColetorHardware {
                     "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits");
             pb.redirectErrorStream(true);
             Process processo = pb.start();
-            String saida = new String(processo.getInputStream().readAllBytes()).trim();
-            processo.waitFor();
+            String saida;
+            try (var is = processo.getInputStream()) {
+                saida = new String(is.readAllBytes()).trim();
+            }
+            boolean concluido = processo.waitFor(5, TimeUnit.SECONDS);
+            if (!concluido) {
+                processo.destroyForcibly();
+                return Double.NaN;
+            }
             if (!saida.isEmpty()) {
                 return Double.parseDouble(saida.split("\n")[0].trim());
             }
@@ -286,8 +315,26 @@ public class ServicoColetorHardware {
                     "get", "Temperature", "/format:list");
             pb.redirectErrorStream(true);
             Process processo = pb.start();
-            String saida = new String(processo.getInputStream().readAllBytes());
-            processo.waitFor();
+            String saida;
+            try (var is = processo.getInputStream()) {
+                saida = new String(is.readAllBytes());
+            }
+            boolean concluido = processo.waitFor(5, TimeUnit.SECONDS);
+            if (!concluido) {
+                processo.destroyForcibly();
+                return Double.NaN;
+            }
+            // WMI retorna temperatura em deciKelvin (ex: 3122 = 312.2K = ~39C)
+            for (String linha : saida.split("\n")) {
+                String trim = linha.trim();
+                if (trim.startsWith("Temperature=")) {
+                    String valor = trim.substring("Temperature=".length()).trim();
+                    if (!valor.isEmpty()) {
+                        double kelvin = Double.parseDouble(valor) / 10.0;
+                        return kelvin - 273.15;
+                    }
+                }
+            }
             return Double.NaN;
         } catch (Exception e) {
             return Double.NaN;
@@ -300,8 +347,15 @@ public class ServicoColetorHardware {
                     "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits");
             pb.redirectErrorStream(true);
             Process processo = pb.start();
-            String saida = new String(processo.getInputStream().readAllBytes()).trim();
-            processo.waitFor();
+            String saida;
+            try (var is = processo.getInputStream()) {
+                saida = new String(is.readAllBytes()).trim();
+            }
+            boolean concluido = processo.waitFor(5, TimeUnit.SECONDS);
+            if (!concluido) {
+                processo.destroyForcibly();
+                return Double.NaN;
+            }
             if (!saida.isEmpty()) {
                 return Double.parseDouble(saida.split("\n")[0].trim());
             }
@@ -330,5 +384,47 @@ public class ServicoColetorHardware {
 
     public HardwareAbstractionLayer obterCamadaHardware() {
         return this.camadaHardware;
+    }
+
+    /**
+     * Obtem dados da bateria do sistema (notebooks).
+     * Retorna null se nao houver bateria (desktops).
+     */
+    public synchronized InformacoesBateria obterBateria() {
+        try {
+            for (PowerSource ps : this.camadaHardware.getPowerSources()) {
+                double percentual = ps.getRemainingCapacityPercent();
+                boolean carregando = ps.isCharging();
+                long tempoRestante = -1;
+                try {
+                    tempoRestante = (long) ps.getTimeRemainingInstant();
+                } catch (Exception ignored) {
+                }
+                return new InformacoesBateria(percentual, carregando, tempoRestante);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * Obtem espaco em disco de todas as particoes/montagens.
+     */
+    public synchronized List<InformacoesDiscoParticao> obterEspacoDisco() {
+        List<InformacoesDiscoParticao> particoes = new ArrayList<>();
+        try {
+            for (OSFileStore fs : this.sistemaOperacional.getFileSystem().getFileStores()) {
+                long total = fs.getTotalSpace();
+                long livre = fs.getUsableSpace();
+                long usado = total - livre;
+                String mount = fs.getVolume();
+                if (mount == null || mount.isBlank()) {
+                    mount = fs.getMount();
+                }
+                particoes.add(new InformacoesDiscoParticao(mount, total, usado, livre));
+            }
+        } catch (Exception ignored) {
+        }
+        return particoes;
     }
 }

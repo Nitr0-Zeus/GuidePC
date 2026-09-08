@@ -23,6 +23,7 @@ public final class HistoricoController {
      */
     public static void registrar(RoutesConfig routes) {
         routes.get("/api/historico", HistoricoController::listar);
+        routes.get("/api/historico/{id}/amostras", HistoricoController::obterAmostras);
         routes.delete("/api/historico/{id}", HistoricoController::deletar);
     }
 
@@ -86,7 +87,13 @@ public final class HistoricoController {
      */
     private static void deletar(Context ctx) {
         try {
-            long id = Long.parseLong(ctx.pathParam("id"));
+            long id;
+            try {
+                id = Long.parseLong(ctx.pathParam("id"));
+            } catch (NumberFormatException e) {
+                ctx.status(400).json(Map.of("erro", "ID invalido"));
+                return;
+            }
             boolean removido = RepositorioResultados.deletarTeste(id);
             if (removido) {
                 ctx.json(Map.of("status", "removido"));
@@ -108,6 +115,34 @@ public final class HistoricoController {
             return valor != null ? Integer.parseInt(valor) : padrao;
         } catch (NumberFormatException e) {
             return padrao;
+        }
+    }
+
+    private static void obterAmostras(Context ctx) {
+        try {
+            long id;
+            try {
+                id = Long.parseLong(ctx.pathParam("id"));
+            } catch (NumberFormatException e) {
+                ctx.status(400).json(Map.of("erro", "ID invalido"));
+                return;
+            }
+            var amostras = RepositorioResultados.obterAmostras(id);
+            List<Map<String, Object>> resultado = new ArrayList<>();
+            for (var a : amostras) {
+                Map<String, Object> mapa = new LinkedHashMap<>();
+                mapa.put("timestampMillis", a.instanteMillis());
+                mapa.put("cargaCpu", a.cargaCpuPercentual());
+                mapa.put("usoMemoria", a.usoMemoriaPercentual());
+                mapa.put("temperatura", a.temperaturaCelsius());
+                mapa.put("tempoRespostaMs", a.tempoRespostaMs());
+                mapa.put("usoGpu", a.usoGpuPercentual());
+                mapa.put("temperaturaGpu", a.temperaturaGpuCelsius());
+                resultado.add(mapa);
+            }
+            ctx.json(resultado);
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("erro", e.getMessage()));
         }
     }
 }

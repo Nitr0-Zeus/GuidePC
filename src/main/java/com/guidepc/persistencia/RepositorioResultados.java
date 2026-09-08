@@ -55,8 +55,10 @@ public final class RepositorioResultados {
             ps.setString(16, hardwareJson);
 
             ps.executeUpdate();
-            ResultSet keys = ps.getGeneratedKeys();
-            long testeId = keys.next() ? keys.getLong(1) : -1;
+            long testeId;
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                testeId = keys.next() ? keys.getLong(1) : -1;
+            }
 
             // Salvar amostras
             if (testeId > 0) {
@@ -93,8 +95,9 @@ public final class RepositorioResultados {
             ps.setString(10, hardwareJson);
 
             ps.executeUpdate();
-            ResultSet keys = ps.getGeneratedKeys();
-            return keys.next() ? keys.getLong(1) : -1;
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                return keys.next() ? keys.getLong(1) : -1;
+            }
         } catch (SQLException e) {
             System.err.println("[GuidePC] Erro ao salvar teste de disco: " + e.getMessage());
             return -1;
@@ -163,21 +166,22 @@ public final class RepositorioResultados {
                 ps.setObject(i + 1, params.get(i));
             }
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                resultados.add(new Object[]{
-                        rs.getLong("id"),
-                        rs.getString("tipo"),
-                        rs.getString("nivel"),
-                        rs.getString("tipo_disco"),
-                        rs.getInt("duracao_segundos"),
-                        rs.getString("inicio"),
-                        rs.getString("fim"),
-                        rs.getDouble("media_cpu"),
-                        rs.getDouble("max_cpu"),
-                        rs.getString("selo"),
-                        rs.getDouble("throughput_mbps")
-                });
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    resultados.add(new Object[]{
+                            rs.getLong("id"),
+                            rs.getString("tipo"),
+                            rs.getString("nivel"),
+                            rs.getString("tipo_disco"),
+                            rs.getInt("duracao_segundos"),
+                            rs.getString("inicio"),
+                            rs.getString("fim"),
+                            rs.getDouble("media_cpu"),
+                            rs.getDouble("max_cpu"),
+                            rs.getString("selo"),
+                            rs.getDouble("throughput_mbps")
+                    });
+                }
             }
         } catch (SQLException e) {
             System.err.println("[GuidePC] Erro ao listar testes: " + e.getMessage());
@@ -213,8 +217,9 @@ public final class RepositorioResultados {
                 ps.setObject(i + 1, params.get(i));
             }
 
-            ResultSet rs = ps.executeQuery();
-            return rs.next() ? rs.getInt(1) : 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
         } catch (SQLException e) {
             return 0;
         }
@@ -226,30 +231,31 @@ public final class RepositorioResultados {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return Optional.of(new Object[]{
-                        rs.getLong("id"),
-                        rs.getString("tipo"),
-                        rs.getString("nivel"),
-                        rs.getString("tipo_disco"),
-                        rs.getInt("duracao_segundos"),
-                        rs.getString("inicio"),
-                        rs.getString("fim"),
-                        rs.getDouble("media_cpu"),
-                        rs.getDouble("max_cpu"),
-                        rs.getDouble("min_cpu"),
-                        rs.getDouble("desvio_cpu"),
-                        rs.getDouble("media_memoria"),
-                        rs.getDouble("max_memoria"),
-                        rs.getDouble("media_resposta_ms"),
-                        rs.getDouble("max_resposta_ms"),
-                        rs.getDouble("throughput_mbps"),
-                        rs.getDouble("iops"),
-                        rs.getString("selo"),
-                        rs.getDouble("estimativa_prox"),
-                        rs.getString("hardware_snapshot")
-                });
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(new Object[]{
+                            rs.getLong("id"),
+                            rs.getString("tipo"),
+                            rs.getString("nivel"),
+                            rs.getString("tipo_disco"),
+                            rs.getInt("duracao_segundos"),
+                            rs.getString("inicio"),
+                            rs.getString("fim"),
+                            rs.getDouble("media_cpu"),
+                            rs.getDouble("max_cpu"),
+                            rs.getDouble("min_cpu"),
+                            rs.getDouble("desvio_cpu"),
+                            rs.getDouble("media_memoria"),
+                            rs.getDouble("max_memoria"),
+                            rs.getDouble("media_resposta_ms"),
+                            rs.getDouble("max_resposta_ms"),
+                            rs.getDouble("throughput_mbps"),
+                            rs.getDouble("iops"),
+                            rs.getString("selo"),
+                            rs.getDouble("estimativa_prox"),
+                            rs.getString("hardware_snapshot")
+                    });
+                }
             }
         } catch (SQLException e) {
             System.err.println("[GuidePC] Erro ao obter teste: " + e.getMessage());
@@ -264,18 +270,19 @@ public final class RepositorioResultados {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setLong(1, testeId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                amostras.add(new Amostra(
-                        rs.getLong("timestamp_millis"),
-                        rs.getDouble("carga_cpu"),
-                        rs.getDouble("uso_memoria"),
-                        rs.getLong("frequencia_hz"),
-                        rs.getDouble("temperatura"),
-                        rs.getDouble("tempo_resposta_ms"),
-                        rs.getDouble("uso_gpu"),
-                        rs.getDouble("temperatura_gpu")
-                ));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    amostras.add(new Amostra(
+                            rs.getLong("timestamp_millis"),
+                            rs.getDouble("carga_cpu"),
+                            rs.getDouble("uso_memoria"),
+                            rs.getLong("frequencia_hz"),
+                            rs.getDouble("temperatura"),
+                            rs.getDouble("tempo_resposta_ms"),
+                            rs.getDouble("uso_gpu"),
+                            rs.getDouble("temperatura_gpu")
+                    ));
+                }
             }
         } catch (SQLException e) {
             System.err.println("[GuidePC] Erro ao obter amostras: " + e.getMessage());

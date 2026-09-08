@@ -1,49 +1,67 @@
+/* ==================== GUIDEPC v4.0 — Folha de Estilos ==================== */
+
+/* ---------- Variaveis de Tema Escuro (padrao) ---------- */
 :root {
-    --bg-primary: #0f0f0f;
-    --bg-card: #1a1a1a;
-    --bg-hover: #252525;
-    --bg-input: #222;
-    --text-primary: #e0e0e0;
-    --text-secondary: #888;
-    --accent: #8B0000;
-    --accent-light: #B22222;
-    --success: #2d5a27;
-    --success-light: #4caf50;
-    --warning: #8B6914;
-    --warning-light: #ff9800;
-    --danger: #8B0000;
-    --danger-light: #f44336;
-    --border: #333;
-    --border-light: #444;
+    --cor-fundo-principal: #0f0f0f;
+    --cor-fundo-cards: #1a1a1a;
+    --cor-fundo-hover: #252525;
+    --cor-fundo-input: #222;
+    --cor-texto-principal: #e0e0e0;
+    --cor-texto-secundario: #888;
+    --cor-destaque: #C41E3A;
+    --cor-destaque-claro: #E8364F;
+    --cor-sucesso: #2d5a27;
+    --cor-sucesso-claro: #4caf50;
+    --cor-aviso: #8B6914;
+    --cor-aviso-claro: #ff9800;
+    --cor-perigo: #8B0000;
+    --cor-perigo-claro: #f44336;
+    --cor-borda: #333;
+    --cor-borda-clara: #444;
 }
 
+/* ---------- Variaveis de Tema Claro ---------- */
+.tema-claro {
+    --cor-fundo-principal: #f5f5f5;
+    --cor-fundo-cards: #ffffff;
+    --cor-fundo-hover: #f0f0f0;
+    --cor-fundo-input: #e8e8e8;
+    --cor-texto-principal: #1a1a1a;
+    --cor-texto-secundario: #666;
+    --cor-borda: #ddd;
+    --cor-borda-clara: #ccc;
+}
+
+/* ---------- Reset Basico ---------- */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* ---------- Corpo da Pagina ---------- */
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: var(--cor-fundo-principal);
+    color: var(--cor-texto-principal);
     min-height: 100vh;
 }
 
-/* Navbar */
+/* ---------- Barra de Navegacao ---------- */
 .navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
     height: 56px;
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border);
+    background: var(--cor-fundo-cards);
+    border-bottom: 1px solid var(--cor-borda);
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
+/* Marca do aplicativo */
 .nav-brand {
     display: flex;
     align-items: center;
@@ -53,16 +71,17 @@ body {
 }
 
 .brand-icon {
-    color: var(--accent);
+    color: var(--cor-destaque);
     font-size: 20px;
 }
 
 .version {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     font-weight: 400;
 }
 
+/* Links de navegacao */
 .nav-links {
     display: flex;
     gap: 4px;
@@ -70,51 +89,79 @@ body {
 
 .nav-link {
     padding: 8px 16px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     text-decoration: none;
     border-radius: 6px;
     font-size: 14px;
-    transition: all 0.2s;
+    transition: color 0.2s, background 0.2s;
 }
 
 .nav-link:hover {
-    color: var(--text-primary);
-    background: var(--bg-hover);
+    color: var(--cor-texto-principal);
+    background: var(--cor-fundo-hover);
 }
 
 .nav-link.active {
-    color: var(--text-primary);
-    background: var(--accent);
+    color: white;
+    background: var(--cor-destaque);
 }
 
+/* Lado direito da barra de navegacao */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Botao de alternar tema */
+.btn-tema {
+    background: var(--cor-fundo-hover);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-tema:hover {
+    background: var(--cor-borda);
+}
+
+/* Indicador de status do WebSocket */
 .nav-status {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
 }
 
 .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--danger-light);
+    background: var(--cor-perigo-claro);
     transition: background 0.3s;
 }
 
 .status-dot.connected {
-    background: var(--success-light);
+    background: var(--cor-sucesso-claro);
 }
 
-/* Container */
+/* ---------- Container Principal ---------- */
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
 }
 
-/* Pages */
+/* ---------- Paginas (SPA) ---------- */
 .page {
     display: none;
 }
@@ -123,17 +170,17 @@ body {
     display: block;
 }
 
-/* Cards */
+/* ---------- Cards e Grade de Metricas ---------- */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
 
 .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-cards);
+    border: 1px solid var(--cor-borda);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 16px;
@@ -147,7 +194,7 @@ body {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     margin-bottom: 8px;
 }
 
@@ -159,33 +206,67 @@ body {
 
 .card-sub {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     margin-top: 4px;
 }
 
-/* Bars */
+/* ---------- Barras de Progresso ---------- */
 .card-bar {
     height: 4px;
-    background: var(--border);
+    background: var(--cor-borda);
     border-radius: 2px;
     overflow: hidden;
 }
 
 .bar-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--cor-destaque);
     border-radius: 2px;
     transition: width 0.5s ease, background 0.3s;
     width: 0%;
 }
 
-.bar-fill.temp { background: var(--warning-light); }
+.bar-fill.temp { background: var(--cor-aviso-claro); }
 .bar-fill.gpu { background: #6c5ce7; }
+.bar-fill.bateria { background: var(--cor-sucesso-claro); }
 
-/* Charts */
+/* ---------- Disco Espaco ---------- */
+.disco-particao {
+    margin-bottom: 12px;
+}
+
+.disco-particao:last-child {
+    margin-bottom: 0;
+}
+
+.disco-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.disco-bar {
+    height: 8px;
+    background: var(--cor-borda);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.disco-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s;
+}
+
+.disco-bar-fill.ok { background: var(--cor-sucesso-claro); }
+.disco-bar-fill.aviso { background: var(--cor-aviso-claro); }
+.disco-bar-fill.critico { background: var(--cor-perigo-claro); }
+
+/* ---------- Graficos ---------- */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -199,7 +280,7 @@ body {
     max-height: 200px;
 }
 
-/* Tabs */
+/* ---------- Abas (Tabs) ---------- */
 .tabs {
     display: flex;
     gap: 4px;
@@ -208,23 +289,23 @@ body {
 
 .tab {
     padding: 10px 20px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-cards);
+    border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s;
 }
 
 .tab:hover {
-    border-color: var(--accent);
-    color: var(--text-primary);
+    border-color: var(--cor-destaque);
+    color: var(--cor-texto-principal);
 }
 
 .tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--cor-destaque);
+    border-color: var(--cor-destaque);
     color: white;
 }
 
@@ -236,7 +317,7 @@ body {
     display: block;
 }
 
-/* Forms */
+/* ---------- Formularios ---------- */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -252,23 +333,24 @@ body {
 
 .form-group label {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
 }
 
 .form-group input,
 .form-group select {
     padding: 10px 12px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-input);
+    border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    color: var(--text-primary);
+    color: var(--cor-texto-principal);
     font-size: 14px;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-    outline: none;
-    border-color: var(--accent);
+    outline: 2px solid var(--cor-destaque);
+    outline-offset: 1px;
+    border-color: var(--cor-destaque);
 }
 
 .form-group input[type="range"] {
@@ -280,10 +362,10 @@ body {
 .range-value {
     font-size: 14px;
     font-weight: 600;
-    color: var(--accent-light);
+    color: var(--cor-destaque-claro);
 }
 
-/* Buttons */
+/* ---------- Botoes ---------- */
 .btn {
     padding: 10px 20px;
     border: none;
@@ -291,41 +373,41 @@ body {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
 .btn-primary {
-    background: var(--accent);
+    background: var(--cor-destaque);
     color: white;
 }
 
 .btn-primary:hover {
-    background: var(--accent-light);
+    background: var(--cor-destaque-claro);
 }
 
 .btn-secondary {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+    border: 1px solid var(--cor-borda);
 }
 
 .btn-secondary:hover {
-    background: var(--border);
+    background: var(--cor-borda);
 }
 
 .btn-danger {
-    background: var(--danger);
+    background: var(--cor-perigo);
     color: white;
 }
 
 .btn-danger:hover {
-    background: var(--danger-light);
+    background: var(--cor-perigo-claro);
 }
 
-/* Progress */
+/* ---------- Barra de Progresso de Testes ---------- */
 .progress-bar {
     height: 8px;
-    background: var(--border);
+    background: var(--cor-borda);
     border-radius: 4px;
     overflow: hidden;
     margin: 12px 0;
@@ -333,7 +415,7 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--cor-destaque);
     border-radius: 4px;
     transition: width 0.3s;
     width: 0%;
@@ -341,7 +423,7 @@ body {
 
 .progress-text {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     text-align: center;
 }
 
@@ -351,12 +433,12 @@ body {
     gap: 12px;
     margin: 16px 0;
     padding: 12px;
-    background: var(--bg-primary);
+    background: var(--cor-fundo-principal);
     border-radius: 8px;
     font-size: 13px;
 }
 
-/* Tables */
+/* ---------- Tabelas ---------- */
 .table-container {
     overflow-x: auto;
 }
@@ -370,11 +452,11 @@ table {
 th, td {
     padding: 10px 12px;
     text-align: left;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--cor-borda);
 }
 
 th {
-    color: var(--text-secondary);
+    color: var(--cor-texto-secundario);
     font-weight: 600;
     font-size: 11px;
     text-transform: uppercase;
@@ -382,9 +464,10 @@ th {
 }
 
 tr:hover {
-    background: var(--bg-hover);
+    background: var(--cor-fundo-hover);
 }
 
+/* Selos de classificacao */
 .selo {
     padding: 3px 8px;
     border-radius: 4px;
@@ -392,14 +475,14 @@ tr:hover {
     font-weight: 600;
 }
 
-.selo-bom { background: var(--success); color: #fff; }
-.selo-atencao { background: var(--warning); color: #fff; }
-.selo-critico { background: var(--danger); color: #fff; }
+.selo-bom { background: var(--cor-sucesso); color: #fff; }
+.selo-atencao { background: var(--cor-aviso); color: #fff; }
+.selo-critico { background: var(--cor-perigo); color: #fff; }
 .selo-excelente { background: #1565c0; color: #fff; }
-.selo-regular { background: var(--warning); color: #fff; }
-.selo-lento { background: var(--danger); color: #fff; }
+.selo-regular { background: var(--cor-aviso); color: #fff; }
+.selo-lento { background: var(--cor-perigo); color: #fff; }
 
-/* Filters */
+/* ---------- Filtros ---------- */
 .filters {
     display: flex;
     gap: 8px;
@@ -409,14 +492,14 @@ tr:hover {
 
 .filters select {
     padding: 8px 12px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-input);
+    border: 1px solid var(--cor-borda);
     border-radius: 6px;
-    color: var(--text-primary);
+    color: var(--cor-texto-principal);
     font-size: 13px;
 }
 
-/* Pagination */
+/* ---------- Paginacao ---------- */
 .pagination {
     display: flex;
     justify-content: center;
@@ -426,24 +509,24 @@ tr:hover {
 
 .pagination button {
     padding: 6px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: var(--cor-fundo-cards);
+    border: 1px solid var(--cor-borda);
     border-radius: 6px;
-    color: var(--text-primary);
+    color: var(--cor-texto-principal);
     cursor: pointer;
     font-size: 13px;
 }
 
 .pagination button.active {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--cor-destaque);
+    border-color: var(--cor-destaque);
 }
 
 .pagination button:hover:not(.active) {
-    background: var(--bg-hover);
+    background: var(--cor-fundo-hover);
 }
 
-/* Alerts */
+/* ---------- Alertas Toast ---------- */
 .alertas-container {
     position: fixed;
     top: 70px;
@@ -456,38 +539,145 @@ tr:hover {
 
 .alerta-toast {
     padding: 12px 16px;
-    background: var(--danger);
+    background: var(--cor-perigo);
     color: white;
     border-radius: 8px;
     font-size: 13px;
-    animation: slideIn 0.3s ease, fadeOut 0.3s ease 4.7s;
+    animation: deslizar-entrada 0.3s ease, desaparecer 0.3s ease 4.7s;
     max-width: 400px;
 }
 
-@keyframes slideIn {
+@keyframes deslizar-entrada {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes fadeOut {
+@keyframes desaparecer {
     from { opacity: 1; }
     to { opacity: 0; }
 }
 
-/* Export buttons */
+/* ---------- Botoes de Exportacao ---------- */
 .export-buttons {
     display: flex;
     gap: 8px;
 }
 
-/* h3 */
+/* ---------- Pagina de Hardware ---------- */
+.hardware-section {
+    margin-bottom: 24px;
+}
+
+.hardware-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--cor-destaque);
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--cor-destaque);
+}
+
+.hardware-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+    gap: 12px;
+}
+
+.hardware-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cor-borda);
+    font-size: 13px;
+}
+
+.hardware-item .label {
+    color: var(--cor-texto-secundario);
+}
+
+.hardware-item .valor {
+    font-weight: 600;
+    text-align: right;
+}
+
+/* ---------- Modal de Detalhes ---------- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--cor-fundo-cards);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.modal-header h2 {
+    font-size: 16px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--cor-texto-secundario);
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: var(--cor-texto-principal);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body canvas {
+    width: 100% !important;
+    max-height: 300px;
+    margin-bottom: 16px;
+}
+
+/* ---------- Titulos ---------- */
 h3 {
     font-size: 16px;
     margin-bottom: 16px;
-    color: var(--text-primary);
+    color: var(--cor-texto-principal);
 }
 
-/* Responsive */
+/* ---------- Classe para leitores de tela ---------- */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- Responsivo (Tablet/Mobile) ---------- */
 @media (max-width: 768px) {
     .navbar {
         flex-wrap: wrap;
@@ -512,5 +702,14 @@ h3 {
 
     .card-value {
         font-size: 24px;
+    }
+}
+
+/* ---------- Reducao de Movimento (acessibilidade) ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
